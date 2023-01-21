@@ -112,19 +112,24 @@ func parseFlags(flags *pflag.FlagSet) (config.Config, error) {
 		return config.Config{}, fmt.Errorf("failed to parse public-value flag: %w", err)
 	}
 
-	getters, err := flags.GetBool("getters")
+	noGetters, err := flags.GetBool("no-getters")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse getters flag: %w", err)
+		return config.Config{}, fmt.Errorf("failed to parse no-getters flag: %w", err)
 	}
 
-	setters, err := flags.GetBool("setters")
+	noSetters, err := flags.GetBool("no-setters")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse setters flag: %w", err)
+		return config.Config{}, fmt.Errorf("failed to parse no-setters flag: %w", err)
 	}
 
-	makeSwitch, err := flags.GetBool("switch")
+	noSwitch, err := flags.GetBool("no-switch")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse switch flag: %w", err)
+		return config.Config{}, fmt.Errorf("failed to parse no-switch flag: %w", err)
+	}
+
+	noDefault, err := flags.GetBool("no-default")
+	if err != nil {
+		return config.Config{}, fmt.Errorf("failed to parse no-default flag: %w", err)
 	}
 
 	return config.Config{
@@ -132,9 +137,10 @@ func parseFlags(flags *pflag.FlagSet) (config.Config, error) {
 		OutFile:     outFile,
 		OutPkg:      outPkg,
 		PublicValue: publicValue,
-		Getters:     getters,
-		Setters:     setters,
-		Switch:      makeSwitch,
+		Getters:     !noGetters,
+		Setters:     !noSetters,
+		Switch:      !noSwitch,
+		Default:     !noDefault,
 	}, nil
 }
 
@@ -169,7 +175,10 @@ func init() {
 	rootCmd.Flags().StringP("out-file", "o", "", "Output file name. If not specified, uses src_gunion.go")
 	rootCmd.Flags().String("out-pkg", "", "Output package name. If not specified, uses current package.")
 	rootCmd.Flags().Bool("public-value", false, "Directly export union value fields.")
-	rootCmd.Flags().BoolP("getters", "g", true, "Generate getters for union members.")
-	rootCmd.Flags().BoolP("setters", "s", true, "Generate setters for union members.")
-	rootCmd.Flags().Bool("switch", true, "Generate switch function for union members.")
+	rootCmd.Flags().Bool("no-getters", false, "Omit getters for union members.")
+	rootCmd.Flags().Bool("no-setters", false, "Omit setters for union members.")
+	rootCmd.Flags().Bool("no-switch", false, "Omit switch function for union members.")
+	rootCmd.Flags().Bool(
+		"no-default", false, "Don't assume first field is the default. Instead, default value will be invalid.",
+	)
 }

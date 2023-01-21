@@ -8,4 +8,5 @@ type Config struct {
 	Getters     bool
 	Setters     bool
 	Switch      bool
+	Default     bool
 }

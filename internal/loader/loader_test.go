@@ -23,6 +23,10 @@ func TestLoader(t *testing.T) {
 				Type:   "myUnion",
 			},
 			outUnion: loader.Union{
+				Type: loader.Type{
+					Name:   "myUnion",
+					Source: "github.com/sidkurella/gunion/internal/loader/testdata/basic",
+				},
 				Variants: []loader.Variant{
 					{
 						Name: "a",
@@ -47,6 +51,10 @@ func TestLoader(t *testing.T) {
 				Type:   "myUnion",
 			},
 			outUnion: loader.Union{
+				Type: loader.Type{
+					Name:   "myUnion",
+					Source: "github.com/sidkurella/gunion/internal/loader/testdata/imported",
+				},
 				Variants: []loader.Variant{
 					{
 						Name: "a",
@@ -73,6 +81,10 @@ func TestLoader(t *testing.T) {
 				Type:   "myUnion",
 			},
 			outUnion: loader.Union{
+				Type: loader.Type{
+					Name:   "myUnion",
+					Source: "github.com/sidkurella/gunion/internal/loader/testdata/externalimport",
+				},
 				Variants: []loader.Variant{
 					{
 						Name: "a",

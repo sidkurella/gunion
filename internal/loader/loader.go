@@ -35,6 +35,8 @@ type Variant struct {
 
 // Represents our union details.
 type Union struct {
+	// Type of this union.
+	Type Type
 	// List of possible variants of this union.
 	Variants []Variant
 }
@@ -93,6 +95,7 @@ func (l *Loader) Load() (Union, error) {
 	}
 
 	return Union{
+		Type:     parseType(obj.Type().String()),
 		Variants: variants,
 	}, nil
 }

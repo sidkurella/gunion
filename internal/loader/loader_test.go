@@ -22,7 +22,22 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/basic/basic.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{},
+			outUnion: loader.Union{
+				Variants: []loader.Variant{
+					{
+						Name: "a",
+						Type: loader.Type{
+							Name: "int",
+						},
+					},
+					{
+						Name: "b",
+						Type: loader.Type{
+							Name: "string",
+						},
+					},
+				},
+			},
 			outError: nil,
 		},
 		{
@@ -31,7 +46,24 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/imported/imported.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{},
+			outUnion: loader.Union{
+				Variants: []loader.Variant{
+					{
+						Name: "a",
+						Type: loader.Type{
+							Name: "int",
+						},
+					},
+					{
+						Name: "b",
+						Type: loader.Type{
+							Name:          "MyValue",
+							IndirectCount: 0,
+							Source:        "github.com/sidkurella/gunion/internal/loader/testdata/imported/inner",
+						},
+					},
+				},
+			},
 			outError: nil,
 		},
 		{
@@ -40,7 +72,32 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/externalimport/externalimport.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{},
+			outUnion: loader.Union{
+				Variants: []loader.Variant{
+					{
+						Name: "a",
+						Type: loader.Type{
+							Name: "int",
+						},
+					},
+					{
+						Name: "b",
+						Type: loader.Type{
+							Name:          "Package",
+							IndirectCount: 1,
+							Source:        "golang.org/x/tools/go/packages",
+						},
+					},
+					{
+						Name: "c",
+						Type: loader.Type{
+							Name:          "Context",
+							IndirectCount: 0,
+							Source:        "context",
+						},
+					},
+				},
+			},
 			outError: nil,
 		},
 	}

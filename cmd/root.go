@@ -51,6 +51,7 @@ The first field of the union should be your default type.
 			return err
 		}
 
+		// TODO: Change to debug logs.
 		fmt.Printf("%#v\n", inCfg)
 		fmt.Printf("%#v\n", outCfg)
 		return nil

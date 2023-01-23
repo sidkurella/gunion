@@ -15,6 +15,13 @@ type Loader struct {
 	config config.InputConfig
 }
 
+type TypeParam struct {
+	// Name of this type parameter.
+	Name string
+	// Interface type of this type parameter.
+	Type Type
+}
+
 // Represents the info we need to know about a type.
 type Type struct {
 	// Name of this type.
@@ -23,6 +30,8 @@ type Type struct {
 	IndirectCount int
 	// Originating package of this type.
 	Source string
+	// Type parameter list.
+	TypeParams []TypeParam
 }
 
 // Represents one of the possible variants of the union.
@@ -94,12 +103,42 @@ func (l *Loader) Load() (Union, error) {
 		variants = append(variants, variant)
 	}
 
+	namedType, ok := obj.Type().(*types.Named)
+	if !ok {
+		return Union{}, fmt.Errorf("type %s must be a named type, but it was not", l.config.Type)
+	}
+
 	return Union{
-		Type:     parseType(obj.Type().String()),
+		Type:     parseUnionType(namedType),
 		Variants: variants,
 	}, nil
 }
 
+func parseUnionType(t *types.Named) Type {
+	var typeParams []TypeParam
+	typeParamList := t.TypeParams()
+	for i := 0; i < typeParamList.Len(); i++ {
+		tp := typeParamList.At(i)
+		typeParams = append(typeParams, parseTypeParam(tp))
+	}
+
+	return Type{
+		Name:          t.Obj().Name(),
+		IndirectCount: 0,
+		Source:        t.Obj().Pkg().Path(),
+		TypeParams:    typeParams,
+	}
+}
+
+func parseTypeParam(tp *types.TypeParam) TypeParam {
+	return TypeParam{
+		Name: tp.Obj().Name(),
+		Type: parseType(tp.Constraint().String()),
+	}
+}
+
+// This system of parsing types will only work for named types or basic types (primitives).
+// TODO: Rework to support any other kind of struct member.
 func parseType(t string) Type {
 	rawType := strings.TrimLeft(t, "*")
 	indirectCt := len(t) - len(rawType)

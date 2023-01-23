@@ -112,6 +112,61 @@ func TestLoader(t *testing.T) {
 			},
 			outError: nil,
 		},
+		{
+			name: "generics",
+			inConfig: config.InputConfig{
+				Source: "testdata/generics/generics.go",
+				Type:   "myUnion",
+			},
+			outUnion: loader.Union{
+				Type: loader.Type{
+					Name:   "myUnion",
+					Source: "github.com/sidkurella/gunion/internal/loader/testdata/generics",
+					TypeParams: []loader.TypeParam{
+						{
+							Name: "T",
+							Type: loader.Type{
+								Name: "any",
+							},
+						},
+						{
+							Name: "U",
+							Type: loader.Type{
+								Name: "comparable",
+							},
+						},
+						{
+							Name: "V",
+							Type: loader.Type{
+								Name:   "Writer",
+								Source: "io",
+							},
+						},
+					},
+				},
+				Variants: []loader.Variant{
+					{
+						Name: "a",
+						Type: loader.Type{
+							Name: "T",
+						},
+					},
+					{
+						Name: "b",
+						Type: loader.Type{
+							Name: "U",
+						},
+					},
+					{
+						Name: "c",
+						Type: loader.Type{
+							Name: "V",
+						},
+					},
+				},
+			},
+			outError: nil,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

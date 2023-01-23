@@ -46,28 +46,29 @@ The first field of the union should be your default type.
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags := cmd.Flags()
 
-		cfg, err := parseFlags(flags)
+		inCfg, outCfg, err := parseFlags(flags)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("%#v\n", cfg)
+		fmt.Printf("%#v\n", inCfg)
+		fmt.Printf("%#v\n", outCfg)
 		return nil
 	},
 }
 
-func parseFlags(flags *pflag.FlagSet) (config.Config, error) {
+func parseFlags(flags *pflag.FlagSet) (config.InputConfig, config.OutputConfig, error) {
 	inType, err := flags.GetString("type")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse type flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse type flag: %w", err)
 	}
 	if inType == "" {
-		return config.Config{}, fmt.Errorf("received empty input type")
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("received empty input type")
 	}
 
 	outType, err := flags.GetString("out-type")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse out-type flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse out-type flag: %w", err)
 	}
 	if outType == "" {
 		outType = strings.ToUpper(inType[0:1]) + inType[1:] + "Union"
@@ -75,19 +76,19 @@ func parseFlags(flags *pflag.FlagSet) (config.Config, error) {
 
 	src, err := flags.GetString("src")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse src flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse src flag: %w", err)
 	}
 	if src == "" {
 		goFile := os.Getenv("GOFILE")
 		if goFile == "" {
-			return config.Config{}, fmt.Errorf("one of src or GOFILE must be set")
+			return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("one of src or GOFILE must be set")
 		}
 		src = goFile
 	}
 
 	outFile, err := flags.GetString("out-file")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse out-file flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse out-file flag: %w", err)
 	}
 	if outFile == "" {
 		ext := filepath.Ext(src)
@@ -97,51 +98,60 @@ func parseFlags(flags *pflag.FlagSet) (config.Config, error) {
 
 	outPkg, err := flags.GetString("out-pkg")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse out-pkg flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse out-pkg flag: %w", err)
 	}
 	if outPkg == "" {
 		goPkg := os.Getenv("GOPACKAGE")
 		if goPkg == "" {
-			return config.Config{}, fmt.Errorf("one of out-pkg or GOPACKAGE must be set")
+			return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("one of out-pkg or GOPACKAGE must be set")
 		}
 		outPkg = goPkg
 	}
 
 	publicValue, err := flags.GetBool("public-value")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse public-value flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse public-value flag: %w", err)
 	}
 
 	noGetters, err := flags.GetBool("no-getters")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse no-getters flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-getters flag: %w", err)
 	}
 
 	noSetters, err := flags.GetBool("no-setters")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse no-setters flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-setters flag: %w", err)
 	}
 
 	noSwitch, err := flags.GetBool("no-switch")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse no-switch flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-switch flag: %w", err)
 	}
 
 	noDefault, err := flags.GetBool("no-default")
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse no-default flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-default flag: %w", err)
 	}
 
-	return config.Config{
-		Type:        inType,
-		OutFile:     outFile,
-		OutPkg:      outPkg,
-		PublicValue: publicValue,
-		Getters:     !noGetters,
-		Setters:     !noSetters,
-		Switch:      !noSwitch,
-		Default:     !noDefault,
-	}, nil
+	path, err := filepath.Abs(src)
+	if err != nil {
+		return config.InputConfig{}, config.OutputConfig{},
+			fmt.Errorf("failed to convert src filepath %s to absolute: %w", src, err)
+	}
+	return config.InputConfig{
+			Source: path,
+			Type:   inType,
+		},
+		config.OutputConfig{
+			OutType:     outType,
+			OutFile:     outFile,
+			OutPkg:      outPkg,
+			PublicValue: publicValue,
+			Getters:     !noGetters,
+			Setters:     !noSetters,
+			Switch:      !noSwitch,
+			Default:     !noDefault,
+		}, nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -75,10 +75,39 @@ func parseType(t gotypes.Type) (types.Type, error) {
 	case *gotypes.Signature:
 		return nil, fmt.Errorf("unimplemented")
 	case *gotypes.Union:
-		return nil, fmt.Errorf("unimplemented")
+		return parseUnion(typ)
 	default:
 		return nil, fmt.Errorf("don't know how to handle type %T", t)
 	}
+}
+
+func parseUnion(t *gotypes.Union) (types.Union, error) {
+	var ret []types.UnionMember
+	for i := 0; i < t.Len(); i++ {
+		term := t.Term(i)
+		member, err := parseTerm(term)
+		if err != nil {
+			return types.Union{}, fmt.Errorf("failed to parse union member %d: %w", i, err)
+		}
+
+		ret = append(ret, member)
+	}
+
+	return types.Union{
+		Members: ret,
+	}, nil
+}
+
+func parseTerm(t *gotypes.Term) (types.UnionMember, error) {
+	typ, err := parseType(t.Type())
+	if err != nil {
+		return types.UnionMember{}, fmt.Errorf("failed to parse union member: %w", err)
+	}
+
+	return types.UnionMember{
+		Approximate: t.Tilde(),
+		Type:        typ,
+	}, nil
 }
 
 func parseStruct(t *gotypes.Struct) (types.Struct, error) {

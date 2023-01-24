@@ -61,7 +61,7 @@ func parseType(t gotypes.Type) (types.Type, error) {
 	case *gotypes.Chan:
 		return parseChan(typ)
 	case *gotypes.Interface:
-		return nil, fmt.Errorf("unimplemented")
+		return parseInterface(typ)
 	case *gotypes.Map:
 		return parseMap(typ)
 	case *gotypes.Named:
@@ -73,12 +73,62 @@ func parseType(t gotypes.Type) (types.Type, error) {
 	case *gotypes.Struct:
 		return parseStruct(typ)
 	case *gotypes.Signature:
-		return nil, fmt.Errorf("unimplemented")
+		return parseSignature(typ)
 	case *gotypes.Union:
 		return parseUnion(typ)
 	default:
 		return nil, fmt.Errorf("don't know how to handle type %T", t)
 	}
+}
+
+func parseSignature(t *gotypes.Signature) (types.Signature, error) {
+	return types.Signature{}, fmt.Errorf("unimplemented: parseSignature")
+}
+
+func parseFunc(t *gotypes.Func) (types.Func, error) {
+	name := t.Name()
+	sig, ok := t.Type().(*gotypes.Signature)
+	if !ok {
+		return types.Func{},
+			fmt.Errorf("expected function %s to have underlying type Signature, but it did not", name)
+	}
+	signature, err := parseSignature(sig)
+	if err != nil {
+		return types.Func{}, fmt.Errorf("failed to parse signature for function %s: %w", name, err)
+	}
+
+	return types.Func{
+		Name:      name,
+		Signature: signature,
+	}, nil
+}
+
+func parseInterface(t *gotypes.Interface) (types.Interface, error) {
+	var embeds []types.Type
+	// Parse embedded types.
+	for i := 0; i < t.NumEmbeddeds(); i++ {
+		typ, err := parseType(t.EmbeddedType(i))
+		if err != nil {
+			return types.Interface{}, fmt.Errorf("failed to parse embedded type %d of interface: %w", i, err)
+		}
+		embeds = append(embeds, typ)
+	}
+
+	// Parse explicit methods.
+	var methods []types.Func
+	for i := 0; i < t.NumExplicitMethods(); i++ {
+		ifaceMethod := t.ExplicitMethod(i)
+		method, err := parseFunc(ifaceMethod)
+		if err != nil {
+			return types.Interface{}, fmt.Errorf("failed to parse method %d of interface: %w", i, err)
+		}
+		methods = append(methods, method)
+	}
+
+	return types.Interface{
+		Embeds:  embeds,
+		Methods: methods,
+	}, nil
 }
 
 func parseUnion(t *gotypes.Union) (types.Union, error) {

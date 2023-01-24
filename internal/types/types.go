@@ -112,7 +112,7 @@ type Union struct {
 
 // Represents an arbitrary function signature.
 type Signature struct {
-	// Type of the receiver, if any. If this is not a method, Receiver.Type will be nil.
+	// Type of the receiver, if any. If this is not a method, Receiver.Type will be nil and Receiver.Name will be empty.
 	Receiver Var
 	// Type parameters for the receiver of this function.
 	ReceiverTypeParams []TypeParam

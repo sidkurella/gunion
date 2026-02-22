@@ -5,6 +5,7 @@ import (
 
 	"github.com/sidkurella/gunion/internal/config"
 	"github.com/sidkurella/gunion/internal/loader"
+	"github.com/sidkurella/gunion/internal/loader/testdata/aliasedimport"
 	"github.com/sidkurella/gunion/internal/loader/testdata/basic"
 	"github.com/sidkurella/gunion/internal/loader/testdata/externalimport"
 	"github.com/sidkurella/gunion/internal/loader/testdata/generics"
@@ -61,6 +62,14 @@ func TestLoader(t *testing.T) {
 				Type:   "myUnion",
 			},
 			outNamed: torture.Expected,
+		},
+		{
+			name: "aliasedimport",
+			inConfig: config.InputConfig{
+				Source: "testdata/aliasedimport/aliasedimport.go",
+				Type:   "myUnion",
+			},
+			outNamed: aliasedimport.Expected,
 		},
 	}
 	for _, tc := range cases {

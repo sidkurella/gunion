@@ -54,6 +54,8 @@ The first field of the union should be your default type.
 		// TODO: Change to debug logs.
 		fmt.Printf("%#v\n", inCfg)
 		fmt.Printf("%#v\n", outCfg)
+
+		// TODO: Call loader to load input struct, then call generator to generate output file.
 		return nil
 	},
 }
@@ -165,31 +167,28 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	setupFlags(rootCmd)
+}
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gunion.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().StringP("type", "t", "", "Type to generate the union from.")
-	rootCmd.MarkFlagRequired("type")
-	rootCmd.Flags().String(
+// setupFlags configures all flags on the given command.
+func setupFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("type", "t", "", "Type to generate the union from.")
+	cmd.MarkFlagRequired("type")
+	cmd.Flags().String(
 		"out-type", "",
 		"Output type name. If not specified, capitalizes the input type name and suffixes with Union.",
 	)
-	rootCmd.Flags().String(
+	cmd.Flags().String(
 		"src", "",
 		"File to read from. If not present, populates with value from GOFILE environment variable.",
 	)
-	rootCmd.Flags().StringP("out-file", "o", "", "Output file name. If not specified, uses src_gunion.go")
-	rootCmd.Flags().String("out-pkg", "", "Output package name. If not specified, uses current package.")
-	rootCmd.Flags().Bool("public-value", false, "Directly export union value fields.")
-	rootCmd.Flags().Bool("no-getters", false, "Omit getters for union members.")
-	rootCmd.Flags().Bool("no-setters", false, "Omit setters for union members.")
-	rootCmd.Flags().Bool("no-switch", false, "Omit switch function for union members.")
-	rootCmd.Flags().Bool(
+	cmd.Flags().StringP("out-file", "o", "", "Output file name. If not specified, uses src_gunion.go")
+	cmd.Flags().String("out-pkg", "", "Output package name. If not specified, uses current package.")
+	cmd.Flags().Bool("public-value", false, "Directly export union value fields.")
+	cmd.Flags().Bool("no-getters", false, "Omit getters for union members.")
+	cmd.Flags().Bool("no-setters", false, "Omit setters for union members.")
+	cmd.Flags().Bool("no-switch", false, "Omit switch function for union members.")
+	cmd.Flags().Bool(
 		"no-default", false, "Don't assume first field is the default. Instead, default value will be invalid.",
 	)
 }

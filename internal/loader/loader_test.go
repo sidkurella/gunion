@@ -5,6 +5,12 @@ import (
 
 	"github.com/sidkurella/gunion/internal/config"
 	"github.com/sidkurella/gunion/internal/loader"
+	"github.com/sidkurella/gunion/internal/loader/testdata/basic"
+	"github.com/sidkurella/gunion/internal/loader/testdata/externalimport"
+	"github.com/sidkurella/gunion/internal/loader/testdata/generics"
+	"github.com/sidkurella/gunion/internal/loader/testdata/imported"
+	"github.com/sidkurella/gunion/internal/loader/testdata/torture"
+	"github.com/sidkurella/gunion/internal/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,7 +18,7 @@ func TestLoader(t *testing.T) {
 	type testcase struct {
 		name     string
 		inConfig config.InputConfig
-		outUnion loader.Union
+		outNamed types.Named
 		outError error
 	}
 	cases := []testcase{
@@ -22,27 +28,7 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/basic/basic.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{
-				Type: loader.Type{
-					Name:   "myUnion",
-					Source: "github.com/sidkurella/gunion/internal/loader/testdata/basic",
-				},
-				Variants: []loader.Variant{
-					{
-						Name: "a",
-						Type: loader.Type{
-							Name: "int",
-						},
-					},
-					{
-						Name: "b",
-						Type: loader.Type{
-							Name: "string",
-						},
-					},
-				},
-			},
-			outError: nil,
+			outNamed: basic.Expected,
 		},
 		{
 			name: "imported",
@@ -50,29 +36,7 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/imported/imported.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{
-				Type: loader.Type{
-					Name:   "myUnion",
-					Source: "github.com/sidkurella/gunion/internal/loader/testdata/imported",
-				},
-				Variants: []loader.Variant{
-					{
-						Name: "a",
-						Type: loader.Type{
-							Name: "int",
-						},
-					},
-					{
-						Name: "b",
-						Type: loader.Type{
-							Name:          "MyValue",
-							IndirectCount: 0,
-							Source:        "github.com/sidkurella/gunion/internal/loader/testdata/imported/inner",
-						},
-					},
-				},
-			},
-			outError: nil,
+			outNamed: imported.Expected,
 		},
 		{
 			name: "externalimport",
@@ -80,37 +44,7 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/externalimport/externalimport.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{
-				Type: loader.Type{
-					Name:   "myUnion",
-					Source: "github.com/sidkurella/gunion/internal/loader/testdata/externalimport",
-				},
-				Variants: []loader.Variant{
-					{
-						Name: "a",
-						Type: loader.Type{
-							Name: "int",
-						},
-					},
-					{
-						Name: "b",
-						Type: loader.Type{
-							Name:          "Package",
-							IndirectCount: 1,
-							Source:        "golang.org/x/tools/go/packages",
-						},
-					},
-					{
-						Name: "c",
-						Type: loader.Type{
-							Name:          "Context",
-							IndirectCount: 0,
-							Source:        "context",
-						},
-					},
-				},
-			},
-			outError: nil,
+			outNamed: externalimport.Expected,
 		},
 		{
 			name: "generics",
@@ -118,65 +52,26 @@ func TestLoader(t *testing.T) {
 				Source: "testdata/generics/generics.go",
 				Type:   "myUnion",
 			},
-			outUnion: loader.Union{
-				Type: loader.Type{
-					Name:   "myUnion",
-					Source: "github.com/sidkurella/gunion/internal/loader/testdata/generics",
-					TypeParams: []loader.TypeParam{
-						{
-							Name: "T",
-							Type: loader.Type{
-								Name: "any",
-							},
-						},
-						{
-							Name: "U",
-							Type: loader.Type{
-								Name: "comparable",
-							},
-						},
-						{
-							Name: "V",
-							Type: loader.Type{
-								Name:   "Writer",
-								Source: "io",
-							},
-						},
-					},
-				},
-				Variants: []loader.Variant{
-					{
-						Name: "a",
-						Type: loader.Type{
-							Name: "T",
-						},
-					},
-					{
-						Name: "b",
-						Type: loader.Type{
-							Name: "U",
-						},
-					},
-					{
-						Name: "c",
-						Type: loader.Type{
-							Name: "V",
-						},
-					},
-				},
+			outNamed: generics.Expected,
+		},
+		{
+			name: "torture",
+			inConfig: config.InputConfig{
+				Source: "testdata/torture/torture.go",
+				Type:   "myUnion",
 			},
-			outError: nil,
+			outNamed: torture.Expected,
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			l := loader.NewLoader(tc.inConfig)
-			u, err := l.Load()
+			named, err := l.Load()
 			if tc.outError != nil {
 				require.EqualError(t, err, tc.outError.Error())
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tc.outUnion, u)
+				require.Equal(t, tc.outNamed, named)
 			}
 		})
 	}

@@ -1,7 +1,7 @@
 package types
 
 // Represents an arbitrary Go-type.
-type Type interface{}
+type Type any
 
 type TypeParam struct {
 	// Name of this type parameter

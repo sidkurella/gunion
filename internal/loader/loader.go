@@ -49,11 +49,13 @@ func (l *Loader) Load() (types.Named, error) {
 	// TODO: Change to debug log.
 	fmt.Printf("%s : %s : %s\n", pkg.Module.Path, pkg.Name, obj.Name())
 
-	return parseNamed(namedType)
+	return parseNamedWithDepth(namedType, true)
 }
 
 func parseType(t gotypes.Type) (types.Type, error) {
 	switch typ := t.(type) {
+	case *gotypes.Alias:
+		return parseAlias(typ)
 	case *gotypes.Array:
 		return parseArray(typ)
 	case *gotypes.Basic:
@@ -74,6 +76,8 @@ func parseType(t gotypes.Type) (types.Type, error) {
 		return parseStruct(typ)
 	case *gotypes.Signature:
 		return parseSignature(typ)
+	case *gotypes.TypeParam:
+		return parseTypeParamAsType(typ)
 	case *gotypes.Union:
 		return parseUnion(typ)
 	default:
@@ -325,6 +329,20 @@ func parseSlice(t *gotypes.Slice) (types.Slice, error) {
 	}, nil
 }
 
+func parseAlias(t *gotypes.Alias) (types.Named, error) {
+	// Type aliases (e.g., `type any = interface{}`) are represented as Named types.
+	// We don't expand the underlying type to avoid issues with built-in aliases.
+	name := t.Obj().Name()
+	var pkg string
+	if t.Obj().Pkg() != nil {
+		pkg = t.Obj().Pkg().Path()
+	}
+	return types.Named{
+		Name:    name,
+		Package: pkg,
+	}, nil
+}
+
 func parseBasic(t *gotypes.Basic) (types.Basic, error) {
 	return types.Basic{
 		Name: t.Name(),
@@ -332,11 +350,23 @@ func parseBasic(t *gotypes.Basic) (types.Basic, error) {
 }
 
 func parseNamed(t *gotypes.Named) (types.Named, error) {
+	return parseNamedWithDepth(t, false)
+}
+
+func parseNamedWithDepth(t *gotypes.Named, expandUnderlying bool) (types.Named, error) {
 	name := t.Obj().Name()
-	underlyingType, err := parseType(t.Underlying())
-	if err != nil {
-		return types.Named{}, fmt.Errorf("failed to parse underlying type for named type %s: %w", name, err)
+
+	var underlyingType types.Type
+	if expandUnderlying {
+		// Only expand the underlying type for the top-level type to avoid infinite recursion
+		// on types with circular references.
+		var err error
+		underlyingType, err = parseType(t.Underlying())
+		if err != nil {
+			return types.Named{}, fmt.Errorf("failed to parse underlying type for named type %s: %w", name, err)
+		}
 	}
+
 	typeParams, err := parseTypeParamList(t.TypeParams())
 	if err != nil {
 		return types.Named{}, fmt.Errorf("failed to parse type params for named type %s: %w", name, err)
@@ -346,12 +376,14 @@ func parseNamed(t *gotypes.Named) (types.Named, error) {
 		return types.Named{}, fmt.Errorf("failed to parse type args for named type %s: %w", name, err)
 	}
 
-	// TODO: We likely don't need to resolve the entire type tree here.
-	// TODO: We likely can treat all Named nodes as leaves and not resolve its underlying type.
-	// TODO: We would still need to resolve type parameters and type arguments, however.
+	var pkg string
+	if t.Obj().Pkg() != nil {
+		pkg = t.Obj().Pkg().Path()
+	}
+
 	return types.Named{
 		Name:       name,
-		Package:    t.Obj().Pkg().Path(),
+		Package:    pkg,
 		Type:       underlyingType,
 		TypeParams: typeParams,
 		TypeArgs:   typeArgs,
@@ -360,8 +392,7 @@ func parseNamed(t *gotypes.Named) (types.Named, error) {
 
 func parseTypeParamList(t *gotypes.TypeParamList) ([]types.TypeParam, error) {
 	var ret []types.TypeParam
-	for i := 0; i < t.Len(); i++ {
-		tp := t.At(i)
+	for tp := range t.TypeParams() {
 		param, err := parseTypeParam(tp)
 		if err != nil {
 			return nil, err
@@ -384,10 +415,22 @@ func parseTypeParam(t *gotypes.TypeParam) (types.TypeParam, error) {
 	}, nil
 }
 
+// parseTypeParamAsType handles type parameters when they appear as types (e.g., field `a T`).
+// We represent them as Named types with just the name, since the actual type is determined by instantiation.
+func parseTypeParamAsType(t *gotypes.TypeParam) (types.Named, error) {
+	var pkg string
+	if t.Obj().Pkg() != nil {
+		pkg = t.Obj().Pkg().Path()
+	}
+	return types.Named{
+		Name:    t.Obj().Name(),
+		Package: pkg,
+	}, nil
+}
+
 func parseTypeList(t *gotypes.TypeList) ([]types.Type, error) {
 	var ret []types.Type
-	for i := 0; i < t.Len(); i++ {
-		typ := t.At(i)
+	for typ := range t.Types() {
 		parsedType, err := parseType(typ)
 		if err != nil {
 			return nil, err

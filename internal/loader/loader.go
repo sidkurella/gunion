@@ -82,7 +82,65 @@ func parseType(t gotypes.Type) (types.Type, error) {
 }
 
 func parseSignature(t *gotypes.Signature) (types.Signature, error) {
-	return types.Signature{}, fmt.Errorf("unimplemented: parseSignature")
+	var receiver types.Var
+	var receiverTypeParams []types.TypeParam
+
+	// Parse receiver if this is a method.
+	if recv := t.Recv(); recv != nil {
+		var err error
+		receiver, err = parseVar(recv)
+		if err != nil {
+			return types.Signature{}, fmt.Errorf("failed to parse receiver: %w", err)
+		}
+
+		// Parse receiver type params.
+		receiverTypeParams, err = parseTypeParamList(t.RecvTypeParams())
+		if err != nil {
+			return types.Signature{}, fmt.Errorf("failed to parse receiver type params: %w", err)
+		}
+	}
+
+	// Parse input parameters.
+	params, err := parseTuple(t.Params())
+	if err != nil {
+		return types.Signature{}, fmt.Errorf("failed to parse params: %w", err)
+	}
+
+	// Parse return values.
+	returns, err := parseTuple(t.Results())
+	if err != nil {
+		return types.Signature{}, fmt.Errorf("failed to parse returns: %w", err)
+	}
+
+	// Parse type parameters.
+	typeParams, err := parseTypeParamList(t.TypeParams())
+	if err != nil {
+		return types.Signature{}, fmt.Errorf("failed to parse type params: %w", err)
+	}
+
+	return types.Signature{
+		Receiver:           receiver,
+		ReceiverTypeParams: receiverTypeParams,
+		Params:             params,
+		Returns:            returns,
+		TypeParams:         typeParams,
+		Variadic:           t.Variadic(),
+	}, nil
+}
+
+func parseTuple(t *gotypes.Tuple) ([]types.Var, error) {
+	if t == nil {
+		return nil, nil
+	}
+	var ret []types.Var
+	for i := 0; i < t.Len(); i++ {
+		v, err := parseVar(t.At(i))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse tuple element %d: %w", i, err)
+		}
+		ret = append(ret, v)
+	}
+	return ret, nil
 }
 
 func parseFunc(t *gotypes.Func) (types.Func, error) {

@@ -2,12 +2,12 @@ package externalimport
 
 import "github.com/sidkurella/gunion/internal/types"
 
-// Expected is the expected output from parsing myUnion.
+// Representation is the parsed type representation of myUnion.
 // Note: We only verify the top-level structure for external imports,
 // since the full type tree of external packages is large and fragile.
-var Expected = types.Named{
+var Representation = types.Named{
 	Name:    "myUnion",
-	Package: "github.com/sidkurella/gunion/internal/loader/testdata/externalimport",
+	Package: "github.com/sidkurella/gunion/internal/testdata/externalimport",
 	Type: types.Struct{
 		Fields: []types.Field{
 			{Var: types.Var{Name: "a", Type: types.Basic{Name: "int"}}},

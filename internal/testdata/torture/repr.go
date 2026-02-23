@@ -2,11 +2,11 @@ package torture
 
 import "github.com/sidkurella/gunion/internal/types"
 
-// Expected is the expected output from parsing myUnion.
+// Representation is the parsed type representation of myUnion.
 // This torture test covers many edge cases for type parsing.
-var Expected = types.Named{
+var Representation = types.Named{
 	Name:    "myUnion",
-	Package: "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+	Package: "github.com/sidkurella/gunion/internal/testdata/torture",
 	Type: types.Struct{
 		Fields: []types.Field{
 			// Basic types
@@ -158,25 +158,25 @@ var Expected = types.Named{
 			// Generic instantiation tests
 			{Var: types.Var{Name: "jj", Type: types.Named{
 				Name:       "Generic",
-				Package:    "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+				Package:    "github.com/sidkurella/gunion/internal/testdata/torture",
 				TypeParams: []types.TypeParam{{Name: "T", Constraint: types.Named{Name: "any"}}},
 				TypeArgs:   []types.Type{types.Basic{Name: "int"}},
 			}}},
 			{Var: types.Var{Name: "kk", Type: types.Named{
 				Name:       "Generic",
-				Package:    "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+				Package:    "github.com/sidkurella/gunion/internal/testdata/torture",
 				TypeParams: []types.TypeParam{{Name: "T", Constraint: types.Named{Name: "any"}}},
 				TypeArgs:   []types.Type{types.Basic{Name: "string"}},
 			}}},
 			{Var: types.Var{Name: "ll", Type: types.Named{
 				Name:       "Generic",
-				Package:    "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+				Package:    "github.com/sidkurella/gunion/internal/testdata/torture",
 				TypeParams: []types.TypeParam{{Name: "T", Constraint: types.Named{Name: "any"}}},
 				TypeArgs:   []types.Type{types.Pointer{Elem: types.Basic{Name: "float64"}}},
 			}}},
 			{Var: types.Var{Name: "mm", Type: types.Named{
 				Name:    "TwoParam",
-				Package: "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+				Package: "github.com/sidkurella/gunion/internal/testdata/torture",
 				TypeParams: []types.TypeParam{
 					{Name: "K", Constraint: types.Named{Name: "comparable"}},
 					{Name: "V", Constraint: types.Named{Name: "any"}},
@@ -185,11 +185,11 @@ var Expected = types.Named{
 			}}},
 			{Var: types.Var{Name: "nn", Type: types.Named{
 				Name:       "Generic",
-				Package:    "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+				Package:    "github.com/sidkurella/gunion/internal/testdata/torture",
 				TypeParams: []types.TypeParam{{Name: "T", Constraint: types.Named{Name: "any"}}},
 				TypeArgs: []types.Type{types.Named{
 					Name:       "Generic",
-					Package:    "github.com/sidkurella/gunion/internal/loader/testdata/torture",
+					Package:    "github.com/sidkurella/gunion/internal/testdata/torture",
 					TypeParams: []types.TypeParam{{Name: "T", Constraint: types.Named{Name: "any"}}},
 					TypeArgs:   []types.Type{types.Basic{Name: "int"}},
 				}},

@@ -27,10 +27,25 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sidkurella/gunion/internal/codegen"
 	"github.com/sidkurella/gunion/internal/config"
+	"github.com/sidkurella/gunion/internal/loader"
+	"github.com/sidkurella/gunion/internal/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+type Loader interface {
+	Load() (types.Named, error)
+}
+
+type Generator interface {
+	Generate(types.Named) error
+}
+
+// Expose factories for loader and generator to allow for overriding in tests.
+var LoaderFactory = loader.NewLoader
+var GeneratorFactory = codegen.NewCodeGenerator
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -51,11 +66,22 @@ The first field of the union should be your default type.
 			return err
 		}
 
-		// TODO: Change to debug logs.
-		fmt.Printf("%#v\n", inCfg)
-		fmt.Printf("%#v\n", outCfg)
+		// TODO: Change to structured logs.
+		fmt.Printf("Input configuration: %#v\n", inCfg)
+		fmt.Printf("Output configuration: %#v\n", outCfg)
 
-		// TODO: Call loader to load input struct, then call generator to generate output file.
+		ldr := LoaderFactory(inCfg)
+		t, err := ldr.Load()
+		if err != nil {
+			return fmt.Errorf("failed to load type: %w", err)
+		}
+
+		gen := GeneratorFactory(outCfg)
+		err = gen.Generate(t)
+		if err != nil {
+			return fmt.Errorf("failed to generate code: %w", err)
+		}
+
 		return nil
 	},
 }

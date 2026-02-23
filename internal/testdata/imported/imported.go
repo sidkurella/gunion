@@ -1,7 +1,7 @@
 package imported
 
 import (
-	"github.com/sidkurella/gunion/internal/loader/testdata/imported/inner"
+	"github.com/sidkurella/gunion/internal/testdata/imported/inner"
 )
 
 type myUnion struct {

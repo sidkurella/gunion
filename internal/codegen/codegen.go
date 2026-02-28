@@ -153,9 +153,6 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 		innerType = innerType.Types(gi.typeArgs...)
 	}
 	inner := jen.Id("inner").Add(innerType)
-	if c.config.PublicValue {
-		inner = innerType
-	}
 
 	// Build type definition: type OutType struct or type OutType[T any, U comparable] struct.
 	typeDef := outFile.Type().Id(c.config.OutType)
@@ -172,17 +169,17 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 			generateIs(variant, c.config.OutType, &gi, outFile)
 			// Unwrap/Get only make sense for variants that have a type (not Invalid).
 			if variant.field != nil {
-				generateUnwrap(variant, c.config.OutType, c.config.PublicValue, &gi, outFile)
-				generateGet(variant, c.config.OutType, c.config.PublicValue, &gi, outFile)
+				generateUnwrap(variant, c.config.OutType, &gi, outFile)
+				generateGet(variant, c.config.OutType, &gi, outFile)
 			}
 		}
 		if c.config.Setters {
-			generateConstructor(variant, c.config.OutType, c.config.PublicValue, t, &gi, outFile)
+			generateConstructor(variant, c.config.OutType, t, &gi, outFile)
 		}
 	}
 
 	if c.config.Match {
-		generateMatch(variants, c.config.OutType, c.config.PublicValue, &gi, outFile)
+		generateMatch(variants, c.config.OutType, &gi, outFile)
 	}
 
 	// Write the generated code to the output file.
@@ -217,14 +214,11 @@ func generateIs(v variant, outType string, gi *genericsInfo, outFile *jen.File) 
 //	    }
 //	    return u.inner.<Variant>
 //	}
-func generateUnwrap(v variant, outType string, publicValue bool, gi *genericsInfo, outFile *jen.File) {
+func generateUnwrap(v variant, outType string, gi *genericsInfo, outFile *jen.File) {
 	methodName := fmt.Sprintf(unwrapVariantNameTemplate, v.name)
 
-	// Access path to the field: u.inner.<Name> or u.<Name> (if embedded).
+	// Access path to the field: u.inner.<Name>.
 	fieldAccess := jen.Id("u").Dot("inner").Dot(v.name)
-	if publicValue {
-		fieldAccess = jen.Id("u").Dot(v.name)
-	}
 
 	outFile.Func().Params(
 		gi.receiverType(outType),
@@ -246,14 +240,11 @@ func generateUnwrap(v variant, outType string, publicValue bool, gi *genericsInf
 //	    var zero <Type>
 //	    return zero, false
 //	}
-func generateGet(v variant, outType string, publicValue bool, gi *genericsInfo, outFile *jen.File) {
+func generateGet(v variant, outType string, gi *genericsInfo, outFile *jen.File) {
 	methodName := fmt.Sprintf(getVariantNameTemplate, v.name)
 
-	// Access path to the field: u.inner.<Name> or u.<Name> (if embedded).
+	// Access path to the field: u.inner.<Name>.
 	fieldAccess := jen.Id("u").Dot("inner").Dot(v.name)
-	if publicValue {
-		fieldAccess = jen.Id("u").Dot(v.name)
-	}
 
 	outFile.Func().Params(
 		gi.receiverType(outType),
@@ -277,7 +268,7 @@ func generateGet(v variant, outType string, publicValue bool, gi *genericsInfo, 
 // For generic types:
 //
 //	func Match[T any, U comparable, _R any](u *OutType[T, U], on_a func(T) _R, on_Invalid func() _R) _R { ... }
-func generateMatch(variants []variant, outType string, publicValue bool, gi *genericsInfo, outFile *jen.File) {
+func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile *jen.File) {
 	// Reorder: real variants first, invalid last.
 	var realVariants []variant
 	var invalidVariant *variant
@@ -326,9 +317,6 @@ func generateMatch(variants []variant, outType string, publicValue bool, gi *gen
 		var callExpr *jen.Statement
 		if v.field != nil {
 			fieldAccess := jen.Id("u").Dot("inner").Dot(v.name)
-			if publicValue {
-				fieldAccess = jen.Id("u").Dot(v.name)
-			}
 			callExpr = jen.Id(armName).Call(fieldAccess)
 		} else {
 			callExpr = jen.Id(armName).Call()
@@ -363,14 +351,10 @@ func generateMatch(variants []variant, outType string, publicValue bool, gi *gen
 // For the Invalid variant (generic):
 //
 //	func NewOutType_Invalid[T any, U comparable]() OutType[T, U] { ... }
-func generateConstructor(v variant, outType string, publicValue bool, source types.Named, gi *genericsInfo, outFile *jen.File) {
+func generateConstructor(v variant, outType string, source types.Named, gi *genericsInfo, outFile *jen.File) {
 	funcName := fmt.Sprintf(constructorNameTemplate, outType, v.name)
 
-	// Inner struct field name: "inner" when private, type name when embedded.
 	innerFieldName := jen.Id("inner")
-	if publicValue {
-		innerFieldName = jen.Qual(source.Package, source.Name)
-	}
 
 	// Source type instantiation: myUnion or myUnion[T, U].
 	sourceType := jen.Qual(source.Package, source.Name)

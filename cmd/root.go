@@ -134,11 +134,6 @@ func parseFlags(flags *pflag.FlagSet) (config.InputConfig, config.OutputConfig, 
 		outPkg = goPkg
 	}
 
-	publicValue, err := flags.GetBool("public-value")
-	if err != nil {
-		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse public-value flag: %w", err)
-	}
-
 	noGetters, err := flags.GetBool("no-getters")
 	if err != nil {
 		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-getters flag: %w", err)
@@ -169,14 +164,13 @@ func parseFlags(flags *pflag.FlagSet) (config.InputConfig, config.OutputConfig, 
 			Type:   inType,
 		},
 		config.OutputConfig{
-			OutType:     outType,
-			OutFile:     outFile,
-			OutPkg:      outPkg,
-			PublicValue: publicValue,
-			Getters:     !noGetters,
-			Setters:     !noSetters,
-			Match:       !noMatch,
-			Default:     !noDefault,
+			OutType: outType,
+			OutFile: outFile,
+			OutPkg:  outPkg,
+			Getters: !noGetters,
+			Setters: !noSetters,
+			Match:   !noMatch,
+			Default: !noDefault,
 		}, nil
 }
 
@@ -207,7 +201,6 @@ func setupFlags(cmd *cobra.Command) {
 	)
 	cmd.Flags().StringP("out-file", "o", "", "Output file name. If not specified, uses src_gunion.go")
 	cmd.Flags().String("out-pkg", "", "Output package name. If not specified, uses current package.")
-	cmd.Flags().Bool("public-value", false, "Directly export union value fields.")
 	cmd.Flags().Bool("no-getters", false, "Omit getters for union members.")
 	cmd.Flags().Bool("no-setters", false, "Omit setters for union members.")
 	cmd.Flags().Bool("no-match", false, "Omit match function for union members.")

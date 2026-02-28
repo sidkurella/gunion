@@ -147,7 +147,6 @@ func TestParseFlags(t *testing.T) {
 			"--src", "source.go",
 			"--out-file", "output.go",
 			"--out-pkg", "outpkg",
-			"--public-value",
 			"--no-getters",
 			"--no-setters",
 			"--no-match",
@@ -165,14 +164,13 @@ func TestParseFlags(t *testing.T) {
 		}, inCfg)
 
 		assert.Equal(t, config.OutputConfig{
-			OutType:     "OutputType",
-			OutFile:     "output.go",
-			OutPkg:      "outpkg",
-			PublicValue: true,
-			Getters:     false,
-			Setters:     false,
-			Match:       false,
-			Default:     false,
+			OutType: "OutputType",
+			OutFile: "output.go",
+			OutPkg:  "outpkg",
+			Getters: false,
+			Setters: false,
+			Match:   false,
+			Default: false,
 		}, outCfg)
 	})
 
@@ -188,7 +186,6 @@ func TestParseFlags(t *testing.T) {
 		require.NoError(t, err)
 
 		// By default, all features are enabled (no-* flags are false)
-		assert.False(t, outCfg.PublicValue)
 		assert.True(t, outCfg.Getters)
 		assert.True(t, outCfg.Setters)
 		assert.True(t, outCfg.Match)

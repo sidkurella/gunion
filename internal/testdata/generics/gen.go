@@ -104,7 +104,7 @@ func NewMyUnionUnion_c[T any, U comparable, V io.Writer](val V) MyUnionUnion[T, 
 	}
 }
 
-func Match[T any, U comparable, V io.Writer, _R any](u *MyUnionUnion[T, U, V], on_a func(T) _R, on_b func(U) _R, on_c func(V) _R, on_Invalid func() _R) _R {
+func Match_MyUnionUnion[T any, U comparable, V io.Writer, _R any](u *MyUnionUnion[T, U, V], on_a func(T) _R, on_b func(U) _R, on_c func(V) _R, on_Invalid func() _R) _R {
 	switch u.variant {
 	case _myUnionVariant_a:
 		return on_a(u.inner.a)

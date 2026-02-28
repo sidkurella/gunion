@@ -15,6 +15,7 @@ const isVariantNameTemplate = `Is_%s`
 const unwrapVariantNameTemplate = `Unwrap_%s`
 const getVariantNameTemplate = `Get_%s`
 const constructorNameTemplate = `New%s_%s`
+const matchFuncNameTemplate = `Match_%s`
 const matchArmNameTemplate = `on_%s`
 
 type variant struct {
@@ -263,11 +264,11 @@ func generateGet(v variant, outType string, gi *genericsInfo, outFile *jen.File)
 //
 // For non-generic types:
 //
-//	func Match[_R any](u *OutType, on_a func(int) _R, on_Invalid func() _R) _R { ... }
+//	func Match_OutType[_R any](u *OutType, on_a func(int) _R, on_Invalid func() _R) _R { ... }
 //
 // For generic types:
 //
-//	func Match[T any, U comparable, _R any](u *OutType[T, U], on_a func(T) _R, on_Invalid func() _R) _R { ... }
+//	func Match_OutType[T any, U comparable, _R any](u *OutType[T, U], on_a func(T) _R, on_Invalid func() _R) _R { ... }
 func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile *jen.File) {
 	// Reorder: real variants first, invalid last.
 	var realVariants []variant
@@ -329,7 +330,8 @@ func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile
 		jen.Panic(jen.Lit("unreachable")),
 	))
 
-	outFile.Func().Id("Match").Types(matchTypeParams...).Params(params...).Id(resultParam).Block(
+	matchFuncName := fmt.Sprintf(matchFuncNameTemplate, outType)
+	outFile.Func().Id(matchFuncName).Types(matchTypeParams...).Params(params...).Id(resultParam).Block(
 		jen.Switch(jen.Id("u").Dot("variant")).Block(cases...),
 	).Line()
 }

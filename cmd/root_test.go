@@ -1,15 +1,40 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/sidkurella/gunion/internal/config"
+	"github.com/sidkurella/gunion/internal/types"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockLoader implements Loader for testing.
+type mockLoader struct {
+	result types.Named
+	err    error
+}
+
+func (m *mockLoader) Load() (types.Named, error) {
+	return m.result, m.err
+}
+
+// mockGenerator implements Generator for testing.
+type mockGenerator struct {
+	received types.Named
+	called   bool
+	err      error
+}
+
+func (m *mockGenerator) Generate(t types.Named) error {
+	m.called = true
+	m.received = t
+	return m.err
+}
 
 // newTestCmd creates a fresh command with all flags configured.
 // This ensures each test has isolated flag state.
@@ -248,5 +273,107 @@ func TestParseFlags(t *testing.T) {
 
 		assert.True(t, filepath.IsAbs(inCfg.Source))
 		assert.Contains(t, inCfg.Source, "relative/path/file.go")
+	})
+}
+
+func TestRunE(t *testing.T) {
+	// Save and restore global state.
+	origLoaderFactory := LoaderFactory
+	origGeneratorFactory := GeneratorFactory
+	origGOFILE := os.Getenv("GOFILE")
+	origGOPACKAGE := os.Getenv("GOPACKAGE")
+	t.Cleanup(func() {
+		LoaderFactory = origLoaderFactory
+		GeneratorFactory = origGeneratorFactory
+		os.Setenv("GOFILE", origGOFILE)
+		os.Setenv("GOPACKAGE", origGOPACKAGE)
+	})
+
+	fakeNamed := types.Named{
+		Name:    "myUnion",
+		Package: "example.com/pkg",
+		Type: types.Struct{
+			Fields: []types.Field{
+				{Var: types.Var{Name: "a", Type: types.Basic{Name: "int"}}},
+			},
+		},
+	}
+
+	t.Run("calls loader then generator with loader output", func(t *testing.T) {
+		os.Setenv("GOFILE", "test.go")
+		os.Setenv("GOPACKAGE", "testpkg")
+
+		mockLdr := &mockLoader{result: fakeNamed}
+		mockGen := &mockGenerator{}
+
+		var capturedInCfg config.InputConfig
+		var capturedOutCfg config.OutputConfig
+		LoaderFactory = func(cfg config.InputConfig) Loader {
+			capturedInCfg = cfg
+			return mockLdr
+		}
+		GeneratorFactory = func(cfg config.OutputConfig) Generator {
+			capturedOutCfg = cfg
+			return mockGen
+		}
+
+		rootCmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
+		err := rootCmd.Execute()
+		require.NoError(t, err)
+
+		// Loader received the right input config.
+		assert.Equal(t, "myUnion", capturedInCfg.Type)
+		assert.True(t, filepath.IsAbs(capturedInCfg.Source))
+
+		// Generator received the right output config.
+		assert.Equal(t, "MyUnionUnion", capturedOutCfg.OutType)
+		assert.Equal(t, "testpkg", capturedOutCfg.OutPkg)
+		assert.True(t, capturedOutCfg.Getters)
+		assert.True(t, capturedOutCfg.Setters)
+		assert.True(t, capturedOutCfg.Match)
+
+		// Generator was called with the loader's output.
+		assert.True(t, mockGen.called)
+		assert.Equal(t, fakeNamed, mockGen.received)
+	})
+
+	t.Run("loader error is propagated", func(t *testing.T) {
+		os.Setenv("GOFILE", "test.go")
+		os.Setenv("GOPACKAGE", "testpkg")
+
+		mockLdr := &mockLoader{err: errors.New("load failed")}
+		mockGen := &mockGenerator{}
+
+		LoaderFactory = func(cfg config.InputConfig) Loader { return mockLdr }
+		GeneratorFactory = func(cfg config.OutputConfig) Generator { return mockGen }
+
+		rootCmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
+		err := rootCmd.Execute()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to load type")
+		assert.Contains(t, err.Error(), "load failed")
+
+		// Generator should not have been called.
+		assert.False(t, mockGen.called)
+	})
+
+	t.Run("generator error is propagated", func(t *testing.T) {
+		os.Setenv("GOFILE", "test.go")
+		os.Setenv("GOPACKAGE", "testpkg")
+
+		mockLdr := &mockLoader{result: fakeNamed}
+		mockGen := &mockGenerator{err: errors.New("generate failed")}
+
+		LoaderFactory = func(cfg config.InputConfig) Loader { return mockLdr }
+		GeneratorFactory = func(cfg config.OutputConfig) Generator { return mockGen }
+
+		rootCmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
+		err := rootCmd.Execute()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to generate code")
+		assert.Contains(t, err.Error(), "generate failed")
+
+		// Generator was called (error happened inside it).
+		assert.True(t, mockGen.called)
 	})
 }

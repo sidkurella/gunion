@@ -107,7 +107,7 @@ func NewMyUnionUnion_c(val context.Context) MyUnionUnion {
 	}
 }
 
-func Match[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(*packages.Package) _R, on_c func(context.Context) _R, on_Invalid func() _R) _R {
+func Match_MyUnionUnion[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(*packages.Package) _R, on_c func(context.Context) _R, on_Invalid func() _R) _R {
 	switch u.variant {
 	case _myUnionVariant_a:
 		return on_a(u.inner.a)

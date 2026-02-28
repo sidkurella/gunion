@@ -44,8 +44,12 @@ type Generator interface {
 }
 
 // Expose factories for loader and generator to allow for overriding in tests.
-var LoaderFactory = loader.NewLoader
-var GeneratorFactory = codegen.NewCodeGenerator
+var LoaderFactory func(config.InputConfig) Loader = func(cfg config.InputConfig) Loader {
+	return loader.NewLoader(cfg)
+}
+var GeneratorFactory func(config.OutputConfig) Generator = func(cfg config.OutputConfig) Generator {
+	return codegen.NewCodeGenerator(cfg)
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

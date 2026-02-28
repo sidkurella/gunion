@@ -5,22 +5,13 @@ package basic
 type _myUnionVariant int
 
 const (
-	_myUnionVariant__invalid _myUnionVariant = 0
-	_myUnionVariant_a        _myUnionVariant = 1
-	_myUnionVariant_b        _myUnionVariant = 2
+	_myUnionVariant_a _myUnionVariant = 0
+	_myUnionVariant_b _myUnionVariant = 1
 )
 
 type MyUnionUnion struct {
 	variant _myUnionVariant
 	inner   myUnion
-}
-
-func (u *MyUnionUnion) Is_Invalid() bool {
-	return u.variant == _myUnionVariant__invalid
-}
-
-func NewMyUnionUnion_Invalid() MyUnionUnion {
-	return MyUnionUnion{variant: _myUnionVariant__invalid}
 }
 
 func (u *MyUnionUnion) Is_a() bool {
@@ -75,14 +66,12 @@ func NewMyUnionUnion_b(val string) MyUnionUnion {
 	}
 }
 
-func Match_MyUnionUnion[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(string) _R, on_Invalid func() _R) _R {
+func Match_MyUnionUnion[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(string) _R) _R {
 	switch u.variant {
 	case _myUnionVariant_a:
 		return on_a(u.inner.a)
 	case _myUnionVariant_b:
 		return on_b(u.inner.b)
-	case _myUnionVariant__invalid:
-		return on_Invalid()
 	default:
 		panic("unreachable")
 	}

@@ -117,6 +117,21 @@ func TestCodeGenerator(t *testing.T) {
 			inNamed:  testdata_basic.Representation,
 			outFile:  "../testdata/basic/minimal/gen.go",
 		},
+		{
+			name: "basic, with default (no invalid variant)",
+			inConfig: config.OutputConfig{
+				OutType: "MyUnionUnion",
+				OutPkg:  "basic",
+				OutFile: tmpDir + "/basic_default_gunion.go",
+				Getters: true,
+				Setters: true,
+				Match:   true,
+				Default: true,
+			},
+			outError: nil,
+			inNamed:  testdata_basic.Representation,
+			outFile:  "../testdata/basic/withdefault/gen.go",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -65,6 +65,7 @@ The first field of the union should be your default type.
 		if err != nil {
 			return err
 		}
+		outCfg.Command = strings.Join(os.Args, " ")
 
 		ldr := LoaderFactory(inCfg)
 		t, err := ldr.Load()

@@ -14,3 +14,76 @@ type MyUnionUnion struct {
 	variant _myUnionVariant
 	inner   myUnion
 }
+
+func (u *MyUnionUnion) Is_Invalid() bool {
+	return u.variant == _myUnionVariant__invalid
+}
+
+func NewMyUnionUnion_Invalid() MyUnionUnion {
+	return MyUnionUnion{variant: _myUnionVariant__invalid}
+}
+
+func (u *MyUnionUnion) Is_a() bool {
+	return u.variant == _myUnionVariant_a
+}
+
+func (u *MyUnionUnion) Unwrap_a() int {
+	if u.variant != _myUnionVariant_a {
+		panic("called Unwrap_a on wrong variant")
+	}
+	return u.inner.a
+}
+
+func (u *MyUnionUnion) Get_a() (int, bool) {
+	if u.variant == _myUnionVariant_a {
+		return u.inner.a, true
+	}
+	var zero int
+	return zero, false
+}
+
+func NewMyUnionUnion_a(val int) MyUnionUnion {
+	return MyUnionUnion{
+		inner:   myUnion{a: val},
+		variant: _myUnionVariant_a,
+	}
+}
+
+func (u *MyUnionUnion) Is_b() bool {
+	return u.variant == _myUnionVariant_b
+}
+
+func (u *MyUnionUnion) Unwrap_b() string {
+	if u.variant != _myUnionVariant_b {
+		panic("called Unwrap_b on wrong variant")
+	}
+	return u.inner.b
+}
+
+func (u *MyUnionUnion) Get_b() (string, bool) {
+	if u.variant == _myUnionVariant_b {
+		return u.inner.b, true
+	}
+	var zero string
+	return zero, false
+}
+
+func NewMyUnionUnion_b(val string) MyUnionUnion {
+	return MyUnionUnion{
+		inner:   myUnion{b: val},
+		variant: _myUnionVariant_b,
+	}
+}
+
+func Match[T any](u *MyUnionUnion, on_a func(int) T, on_b func(string) T, on_Invalid func() T) T {
+	switch u.variant {
+	case _myUnionVariant_a:
+		return on_a(u.inner.a)
+	case _myUnionVariant_b:
+		return on_b(u.inner.b)
+	case _myUnionVariant__invalid:
+		return on_Invalid()
+	default:
+		panic("unreachable")
+	}
+}

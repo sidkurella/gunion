@@ -12,6 +12,23 @@ const (
 	_myUnionVariant_c        _myUnionVariant = 4
 )
 
+func (v _myUnionVariant) String() string {
+	switch v {
+	case _myUnionVariant__Invalid:
+		return "_Invalid"
+	case _myUnionVariant__variant:
+		return "_variant"
+	case _myUnionVariant__inner:
+		return "_inner"
+	case _myUnionVariant_Invalid:
+		return "Invalid"
+	case _myUnionVariant_c:
+		return "c"
+	default:
+		return "unknown"
+	}
+}
+
 type MyUnionUnion struct {
 	__variant _myUnionVariant
 	__inner   myUnion

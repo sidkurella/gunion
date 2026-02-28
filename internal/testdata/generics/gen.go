@@ -13,6 +13,21 @@ const (
 	_myUnionVariant_c       _myUnionVariant = 3
 )
 
+func (v _myUnionVariant) String() string {
+	switch v {
+	case _myUnionVariant_Invalid:
+		return "Invalid"
+	case _myUnionVariant_a:
+		return "a"
+	case _myUnionVariant_b:
+		return "b"
+	case _myUnionVariant_c:
+		return "c"
+	default:
+		return "unknown"
+	}
+}
+
 type MyUnionUnion[T any, U comparable, V io.Writer] struct {
 	_variant _myUnionVariant
 	_inner   myUnion[T, U, V]

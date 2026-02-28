@@ -183,6 +183,8 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 		}
 	})
 
+	generateStringer(variants, variantTypeName, outFile)
+
 	// Build inner field: _inner myUnion or _inner myUnion[T, U].
 	innerType := jen.Qual(t.Package, t.Name)
 	if len(gi.typeArgs) > 0 {
@@ -225,6 +227,34 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 	}
 
 	return nil
+}
+
+// generateStringer generates a String() method on the variant enum type.
+//
+//	func (v _myUnionVariant) String() string {
+//	    switch v {
+//	    case _myUnionVariant_a:
+//	        return "a"
+//	    default:
+//	        return "unknown"
+//	    }
+//	}
+func generateStringer(variants []variant, variantTypeName string, outFile *jen.File) {
+	var cases []jen.Code
+	for _, v := range variants {
+		cases = append(cases, jen.Case(jen.Id(v.constName)).Block(
+			jen.Return(jen.Lit(v.name)),
+		))
+	}
+	cases = append(cases, jen.Default().Block(
+		jen.Return(jen.Lit("unknown")),
+	))
+
+	outFile.Func().Params(
+		jen.Id("v").Id(variantTypeName),
+	).Id("String").Params().String().Block(
+		jen.Switch(jen.Id("v")).Block(cases...),
+	).Line()
 }
 
 // generateIs generates the Is_<Variant> method on the union type.

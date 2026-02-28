@@ -22,7 +22,7 @@ func NewLoader(config config.InputConfig) *Loader {
 
 func (l *Loader) Load() (types.Named, error) {
 	pkgs, err := packages.Load(&packages.Config{
-		// TODO: Identify which of these are unnecessary.
+		// Probably overkill, but it works and is simpler than trying to figure out exactly which flags we need.
 		Mode: packages.NeedTypes | packages.NeedImports | packages.NeedSyntax | packages.NeedTypesInfo |
 			packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedModule,
 	}, "file="+l.config.Source)

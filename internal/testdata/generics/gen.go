@@ -7,39 +7,39 @@ import "io"
 type _myUnionVariant int
 
 const (
-	_myUnionVariant__invalid _myUnionVariant = 0
-	_myUnionVariant_a        _myUnionVariant = 1
-	_myUnionVariant_b        _myUnionVariant = 2
-	_myUnionVariant_c        _myUnionVariant = 3
+	_myUnionVariant_Invalid _myUnionVariant = 0
+	_myUnionVariant_a       _myUnionVariant = 1
+	_myUnionVariant_b       _myUnionVariant = 2
+	_myUnionVariant_c       _myUnionVariant = 3
 )
 
 type MyUnionUnion[T any, U comparable, V io.Writer] struct {
-	variant _myUnionVariant
-	inner   myUnion[T, U, V]
+	_variant _myUnionVariant
+	_inner   myUnion[T, U, V]
 }
 
 func (u *MyUnionUnion[T, U, V]) Is_Invalid() bool {
-	return u.variant == _myUnionVariant__invalid
+	return u._variant == _myUnionVariant_Invalid
 }
 
 func NewMyUnionUnion_Invalid[T any, U comparable, V io.Writer]() MyUnionUnion[T, U, V] {
-	return MyUnionUnion[T, U, V]{variant: _myUnionVariant__invalid}
+	return MyUnionUnion[T, U, V]{_variant: _myUnionVariant_Invalid}
 }
 
 func (u *MyUnionUnion[T, U, V]) Is_a() bool {
-	return u.variant == _myUnionVariant_a
+	return u._variant == _myUnionVariant_a
 }
 
 func (u *MyUnionUnion[T, U, V]) Unwrap_a() T {
-	if u.variant != _myUnionVariant_a {
+	if u._variant != _myUnionVariant_a {
 		panic("called Unwrap_a on wrong variant")
 	}
-	return u.inner.a
+	return u._inner.a
 }
 
 func (u *MyUnionUnion[T, U, V]) Get_a() (T, bool) {
-	if u.variant == _myUnionVariant_a {
-		return u.inner.a, true
+	if u._variant == _myUnionVariant_a {
+		return u._inner.a, true
 	}
 	var zero T
 	return zero, false
@@ -47,25 +47,25 @@ func (u *MyUnionUnion[T, U, V]) Get_a() (T, bool) {
 
 func NewMyUnionUnion_a[T any, U comparable, V io.Writer](val T) MyUnionUnion[T, U, V] {
 	return MyUnionUnion[T, U, V]{
-		inner:   myUnion[T, U, V]{a: val},
-		variant: _myUnionVariant_a,
+		_inner:   myUnion[T, U, V]{a: val},
+		_variant: _myUnionVariant_a,
 	}
 }
 
 func (u *MyUnionUnion[T, U, V]) Is_b() bool {
-	return u.variant == _myUnionVariant_b
+	return u._variant == _myUnionVariant_b
 }
 
 func (u *MyUnionUnion[T, U, V]) Unwrap_b() U {
-	if u.variant != _myUnionVariant_b {
+	if u._variant != _myUnionVariant_b {
 		panic("called Unwrap_b on wrong variant")
 	}
-	return u.inner.b
+	return u._inner.b
 }
 
 func (u *MyUnionUnion[T, U, V]) Get_b() (U, bool) {
-	if u.variant == _myUnionVariant_b {
-		return u.inner.b, true
+	if u._variant == _myUnionVariant_b {
+		return u._inner.b, true
 	}
 	var zero U
 	return zero, false
@@ -73,25 +73,25 @@ func (u *MyUnionUnion[T, U, V]) Get_b() (U, bool) {
 
 func NewMyUnionUnion_b[T any, U comparable, V io.Writer](val U) MyUnionUnion[T, U, V] {
 	return MyUnionUnion[T, U, V]{
-		inner:   myUnion[T, U, V]{b: val},
-		variant: _myUnionVariant_b,
+		_inner:   myUnion[T, U, V]{b: val},
+		_variant: _myUnionVariant_b,
 	}
 }
 
 func (u *MyUnionUnion[T, U, V]) Is_c() bool {
-	return u.variant == _myUnionVariant_c
+	return u._variant == _myUnionVariant_c
 }
 
 func (u *MyUnionUnion[T, U, V]) Unwrap_c() V {
-	if u.variant != _myUnionVariant_c {
+	if u._variant != _myUnionVariant_c {
 		panic("called Unwrap_c on wrong variant")
 	}
-	return u.inner.c
+	return u._inner.c
 }
 
 func (u *MyUnionUnion[T, U, V]) Get_c() (V, bool) {
-	if u.variant == _myUnionVariant_c {
-		return u.inner.c, true
+	if u._variant == _myUnionVariant_c {
+		return u._inner.c, true
 	}
 	var zero V
 	return zero, false
@@ -99,20 +99,20 @@ func (u *MyUnionUnion[T, U, V]) Get_c() (V, bool) {
 
 func NewMyUnionUnion_c[T any, U comparable, V io.Writer](val V) MyUnionUnion[T, U, V] {
 	return MyUnionUnion[T, U, V]{
-		inner:   myUnion[T, U, V]{c: val},
-		variant: _myUnionVariant_c,
+		_inner:   myUnion[T, U, V]{c: val},
+		_variant: _myUnionVariant_c,
 	}
 }
 
 func Match_MyUnionUnion[T any, U comparable, V io.Writer, _R any](u *MyUnionUnion[T, U, V], on_a func(T) _R, on_b func(U) _R, on_c func(V) _R, on_Invalid func() _R) _R {
-	switch u.variant {
+	switch u._variant {
 	case _myUnionVariant_a:
-		return on_a(u.inner.a)
+		return on_a(u._inner.a)
 	case _myUnionVariant_b:
-		return on_b(u.inner.b)
+		return on_b(u._inner.b)
 	case _myUnionVariant_c:
-		return on_c(u.inner.c)
-	case _myUnionVariant__invalid:
+		return on_c(u._inner.c)
+	case _myUnionVariant_Invalid:
 		return on_Invalid()
 	default:
 		panic("unreachable")

@@ -5,12 +5,12 @@ package basic
 type _myUnionVariant int
 
 const (
-	_myUnionVariant__invalid _myUnionVariant = 0
-	_myUnionVariant_a        _myUnionVariant = 1
-	_myUnionVariant_b        _myUnionVariant = 2
+	_myUnionVariant_Invalid _myUnionVariant = 0
+	_myUnionVariant_a       _myUnionVariant = 1
+	_myUnionVariant_b       _myUnionVariant = 2
 )
 
 type MyUnionUnion struct {
-	variant _myUnionVariant
-	inner   myUnion
+	_variant _myUnionVariant
+	_inner   myUnion
 }

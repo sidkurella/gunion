@@ -9,6 +9,7 @@ import (
 	"github.com/sidkurella/gunion/internal/config"
 	testdata_aliasedimport "github.com/sidkurella/gunion/internal/testdata/aliasedimport"
 	testdata_basic "github.com/sidkurella/gunion/internal/testdata/basic"
+	testdata_collision "github.com/sidkurella/gunion/internal/testdata/collision"
 	testdata_externalimport "github.com/sidkurella/gunion/internal/testdata/externalimport"
 	testdata_generics "github.com/sidkurella/gunion/internal/testdata/generics"
 	testdata_imported "github.com/sidkurella/gunion/internal/testdata/imported"
@@ -131,6 +132,21 @@ func TestCodeGenerator(t *testing.T) {
 			outError: nil,
 			inNamed:  testdata_basic.Representation,
 			outFile:  "../testdata/basic/withdefault/gen.go",
+		},
+		{
+			name: "collision, fields named _variant and _inner",
+			inConfig: config.OutputConfig{
+				OutType: "MyUnionUnion",
+				OutPkg:  "collision",
+				OutFile: tmpDir + "/collision_gunion.go",
+				Getters: true,
+				Setters: true,
+				Match:   true,
+				Default: false,
+			},
+			outError: nil,
+			inNamed:  testdata_collision.Representation,
+			outFile:  "../testdata/collision/gen.go",
 		},
 	}
 	for _, tc := range cases {

@@ -27,6 +27,38 @@ type variant struct {
 	typeCode *jen.Statement
 }
 
+// structFields holds the generated field names for the union struct.
+// These are chosen to avoid collisions with the source struct's field names.
+type structFields struct {
+	variantField string // field name for the variant tag (default "_variant")
+	innerField   string // field name for the embedded source struct (default "_inner")
+	invalidName  string // variant name for the invalid/zero-value variant (default "Invalid")
+}
+
+// newStructFields picks field names for the generated union struct that don't
+// collide with any of the source struct's field names. Starts with "_variant"
+// and "_inner", prepending underscores until unique.
+func newStructFields(sourceFields []types.Field) structFields {
+	taken := make(map[string]bool, len(sourceFields))
+	for _, f := range sourceFields {
+		taken[f.Var.Name] = true
+	}
+	return structFields{
+		variantField: uniqueName("_variant", taken),
+		innerField:   uniqueName("_inner", taken),
+		invalidName:  uniqueName("Invalid", taken),
+	}
+}
+
+// uniqueName returns candidate if it's not in taken, otherwise prepends
+// underscores until a unique name is found.
+func uniqueName(candidate string, taken map[string]bool) string {
+	for taken[candidate] {
+		candidate = "_" + candidate
+	}
+	return candidate
+}
+
 // genericsInfo holds pre-computed jen code for generic type parameters.
 // All fields are nil/empty when the source type is not generic.
 type genericsInfo struct {
@@ -100,9 +132,12 @@ func NewCodeGenerator(c config.OutputConfig) *CodeGenerator {
 
 func (c *CodeGenerator) Generate(t types.Named) error {
 	// Validate that the provided type is a struct.
-	if _, ok := t.Type.(types.Struct); !ok {
+	s, ok := t.Type.(types.Struct)
+	if !ok {
 		return fmt.Errorf("expected a struct type, got %T", t.Type)
 	}
+
+	sf := newStructFields(s.Fields)
 
 	gi, err := newGenericsInfo(t.TypeParams)
 	if err != nil {
@@ -119,15 +154,15 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 	variantTypeName := fmt.Sprintf(variantNameTemplate, t.Name)
 	outFile.Type().Id(variantTypeName).Int().Line()
 
-	variants := make([]variant, 0, len(t.Type.(types.Struct).Fields))
+	variants := make([]variant, 0, len(s.Fields))
 	if !c.config.Default { // Insert default invalid variant at beginning
 		variants = append(variants, variant{
-			name:      "Invalid",
-			constName: variantTypeName + "__invalid",
+			name:      sf.invalidName,
+			constName: variantTypeName + "_" + sf.invalidName,
 		})
 	}
 
-	for _, field := range t.Type.(types.Struct).Fields {
+	for _, field := range s.Fields {
 		code, err := typeToCode(field.Var.Type)
 		if err != nil {
 			return fmt.Errorf("failed to convert type for field %s: %w", field.Var.Name, err)
@@ -148,12 +183,12 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 		}
 	})
 
-	// Build inner field: inner myUnion or inner myUnion[T, U].
+	// Build inner field: _inner myUnion or _inner myUnion[T, U].
 	innerType := jen.Qual(t.Package, t.Name)
 	if len(gi.typeArgs) > 0 {
 		innerType = innerType.Types(gi.typeArgs...)
 	}
-	inner := jen.Id("inner").Add(innerType)
+	inner := jen.Id(sf.innerField).Add(innerType)
 
 	// Build type definition: type OutType struct or type OutType[T any, U comparable] struct.
 	typeDef := outFile.Type().Id(c.config.OutType)
@@ -161,26 +196,26 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 		typeDef = typeDef.Types(gi.typeParamDefs...)
 	}
 	typeDef.Struct(
-		jen.Id("variant").Qual(t.Package, variantTypeName),
+		jen.Id(sf.variantField).Qual(t.Package, variantTypeName),
 		inner,
 	)
 
 	for _, variant := range variants {
 		if c.config.Getters {
-			generateIs(variant, c.config.OutType, &gi, outFile)
+			generateIs(variant, c.config.OutType, &sf, &gi, outFile)
 			// Unwrap/Get only make sense for variants that have a type (not Invalid).
 			if variant.field != nil {
-				generateUnwrap(variant, c.config.OutType, &gi, outFile)
-				generateGet(variant, c.config.OutType, &gi, outFile)
+				generateUnwrap(variant, c.config.OutType, &sf, &gi, outFile)
+				generateGet(variant, c.config.OutType, &sf, &gi, outFile)
 			}
 		}
 		if c.config.Setters {
-			generateConstructor(variant, c.config.OutType, t, &gi, outFile)
+			generateConstructor(variant, c.config.OutType, t, &sf, &gi, outFile)
 		}
 	}
 
 	if c.config.Match {
-		generateMatch(variants, c.config.OutType, &gi, outFile)
+		generateMatch(variants, c.config.OutType, &sf, &gi, outFile)
 	}
 
 	// Write the generated code to the output file.
@@ -197,12 +232,12 @@ func (c *CodeGenerator) Generate(t types.Named) error {
 //	func (u *OutType[T, U]) Is_<Variant>() bool {
 //	    return u.variant == <constName>
 //	}
-func generateIs(v variant, outType string, gi *genericsInfo, outFile *jen.File) {
+func generateIs(v variant, outType string, sf *structFields, gi *genericsInfo, outFile *jen.File) {
 	methodName := fmt.Sprintf(isVariantNameTemplate, v.name)
 	outFile.Func().Params(
 		gi.receiverType(outType),
 	).Id(methodName).Params().Bool().Block(
-		jen.Return(jen.Id("u").Dot("variant").Op("==").Id(v.constName)),
+		jen.Return(jen.Id("u").Dot(sf.variantField).Op("==").Id(v.constName)),
 	).Line()
 }
 
@@ -215,16 +250,16 @@ func generateIs(v variant, outType string, gi *genericsInfo, outFile *jen.File) 
 //	    }
 //	    return u.inner.<Variant>
 //	}
-func generateUnwrap(v variant, outType string, gi *genericsInfo, outFile *jen.File) {
+func generateUnwrap(v variant, outType string, sf *structFields, gi *genericsInfo, outFile *jen.File) {
 	methodName := fmt.Sprintf(unwrapVariantNameTemplate, v.name)
 
-	// Access path to the field: u.inner.<Name>.
-	fieldAccess := jen.Id("u").Dot("inner").Dot(v.name)
+	// Access path to the field: u._inner.<Name>.
+	fieldAccess := jen.Id("u").Dot(sf.innerField).Dot(v.name)
 
 	outFile.Func().Params(
 		gi.receiverType(outType),
 	).Id(methodName).Params().Add(v.typeCode).Block(
-		jen.If(jen.Id("u").Dot("variant").Op("!=").Id(v.constName)).Block(
+		jen.If(jen.Id("u").Dot(sf.variantField).Op("!=").Id(v.constName)).Block(
 			jen.Panic(jen.Lit(fmt.Sprintf("called %s on wrong variant", methodName))),
 		),
 		jen.Return(fieldAccess),
@@ -241,16 +276,16 @@ func generateUnwrap(v variant, outType string, gi *genericsInfo, outFile *jen.Fi
 //	    var zero <Type>
 //	    return zero, false
 //	}
-func generateGet(v variant, outType string, gi *genericsInfo, outFile *jen.File) {
+func generateGet(v variant, outType string, sf *structFields, gi *genericsInfo, outFile *jen.File) {
 	methodName := fmt.Sprintf(getVariantNameTemplate, v.name)
 
-	// Access path to the field: u.inner.<Name>.
-	fieldAccess := jen.Id("u").Dot("inner").Dot(v.name)
+	// Access path to the field: u._inner.<Name>.
+	fieldAccess := jen.Id("u").Dot(sf.innerField).Dot(v.name)
 
 	outFile.Func().Params(
 		gi.receiverType(outType),
 	).Id(methodName).Params().Params(v.typeCode, jen.Bool()).Block(
-		jen.If(jen.Id("u").Dot("variant").Op("==").Id(v.constName)).Block(
+		jen.If(jen.Id("u").Dot(sf.variantField).Op("==").Id(v.constName)).Block(
 			jen.Return(fieldAccess, jen.True()),
 		),
 		jen.Var().Id("zero").Add(v.typeCode),
@@ -269,7 +304,7 @@ func generateGet(v variant, outType string, gi *genericsInfo, outFile *jen.File)
 // For generic types:
 //
 //	func Match_OutType[T any, U comparable, _R any](u *OutType[T, U], on_a func(T) _R, on_Invalid func() _R) _R { ... }
-func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile *jen.File) {
+func generateMatch(variants []variant, outType string, sf *structFields, gi *genericsInfo, outFile *jen.File) {
 	// Reorder: real variants first, invalid last.
 	var realVariants []variant
 	var invalidVariant *variant
@@ -317,7 +352,7 @@ func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile
 		armName := fmt.Sprintf(matchArmNameTemplate, v.name)
 		var callExpr *jen.Statement
 		if v.field != nil {
-			fieldAccess := jen.Id("u").Dot("inner").Dot(v.name)
+			fieldAccess := jen.Id("u").Dot(sf.innerField).Dot(v.name)
 			callExpr = jen.Id(armName).Call(fieldAccess)
 		} else {
 			callExpr = jen.Id(armName).Call()
@@ -332,7 +367,7 @@ func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile
 
 	matchFuncName := fmt.Sprintf(matchFuncNameTemplate, outType)
 	outFile.Func().Id(matchFuncName).Types(matchTypeParams...).Params(params...).Id(resultParam).Block(
-		jen.Switch(jen.Id("u").Dot("variant")).Block(cases...),
+		jen.Switch(jen.Id("u").Dot(sf.variantField)).Block(cases...),
 	).Line()
 }
 
@@ -353,10 +388,8 @@ func generateMatch(variants []variant, outType string, gi *genericsInfo, outFile
 // For the Invalid variant (generic):
 //
 //	func NewOutType_Invalid[T any, U comparable]() OutType[T, U] { ... }
-func generateConstructor(v variant, outType string, source types.Named, gi *genericsInfo, outFile *jen.File) {
+func generateConstructor(v variant, outType string, source types.Named, sf *structFields, gi *genericsInfo, outFile *jen.File) {
 	funcName := fmt.Sprintf(constructorNameTemplate, outType, v.name)
-
-	innerFieldName := jen.Id("inner")
 
 	// Source type instantiation: myUnion or myUnion[T, U].
 	sourceType := jen.Qual(source.Package, source.Name)
@@ -372,7 +405,7 @@ func generateConstructor(v variant, outType string, source types.Named, gi *gene
 		}
 		funcDef.Params().Add(gi.returnType(outType)).Block(
 			jen.Return(gi.returnType(outType).Values(jen.Dict{
-				jen.Id("variant"): jen.Id(v.constName),
+				jen.Id(sf.variantField): jen.Id(v.constName),
 			})),
 		).Line()
 		return
@@ -386,8 +419,8 @@ func generateConstructor(v variant, outType string, source types.Named, gi *gene
 		jen.Id("val").Add(v.typeCode),
 	).Add(gi.returnType(outType)).Block(
 		jen.Return(gi.returnType(outType).Values(jen.Dict{
-			jen.Id("variant"): jen.Id(v.constName),
-			innerFieldName: sourceType.Values(jen.Dict{
+			jen.Id(sf.variantField): jen.Id(v.constName),
+			jen.Id(sf.innerField): sourceType.Values(jen.Dict{
 				jen.Id(v.name): jen.Id("val"),
 			}),
 		})),

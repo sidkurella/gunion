@@ -10,39 +10,39 @@ import (
 type _myUnionVariant int
 
 const (
-	_myUnionVariant__invalid _myUnionVariant = 0
-	_myUnionVariant_a        _myUnionVariant = 1
-	_myUnionVariant_b        _myUnionVariant = 2
-	_myUnionVariant_c        _myUnionVariant = 3
+	_myUnionVariant_Invalid _myUnionVariant = 0
+	_myUnionVariant_a       _myUnionVariant = 1
+	_myUnionVariant_b       _myUnionVariant = 2
+	_myUnionVariant_c       _myUnionVariant = 3
 )
 
 type MyUnionUnion struct {
-	variant _myUnionVariant
-	inner   myUnion
+	_variant _myUnionVariant
+	_inner   myUnion
 }
 
 func (u *MyUnionUnion) Is_Invalid() bool {
-	return u.variant == _myUnionVariant__invalid
+	return u._variant == _myUnionVariant_Invalid
 }
 
 func NewMyUnionUnion_Invalid() MyUnionUnion {
-	return MyUnionUnion{variant: _myUnionVariant__invalid}
+	return MyUnionUnion{_variant: _myUnionVariant_Invalid}
 }
 
 func (u *MyUnionUnion) Is_a() bool {
-	return u.variant == _myUnionVariant_a
+	return u._variant == _myUnionVariant_a
 }
 
 func (u *MyUnionUnion) Unwrap_a() int {
-	if u.variant != _myUnionVariant_a {
+	if u._variant != _myUnionVariant_a {
 		panic("called Unwrap_a on wrong variant")
 	}
-	return u.inner.a
+	return u._inner.a
 }
 
 func (u *MyUnionUnion) Get_a() (int, bool) {
-	if u.variant == _myUnionVariant_a {
-		return u.inner.a, true
+	if u._variant == _myUnionVariant_a {
+		return u._inner.a, true
 	}
 	var zero int
 	return zero, false
@@ -50,25 +50,25 @@ func (u *MyUnionUnion) Get_a() (int, bool) {
 
 func NewMyUnionUnion_a(val int) MyUnionUnion {
 	return MyUnionUnion{
-		inner:   myUnion{a: val},
-		variant: _myUnionVariant_a,
+		_inner:   myUnion{a: val},
+		_variant: _myUnionVariant_a,
 	}
 }
 
 func (u *MyUnionUnion) Is_b() bool {
-	return u.variant == _myUnionVariant_b
+	return u._variant == _myUnionVariant_b
 }
 
 func (u *MyUnionUnion) Unwrap_b() *packages.Package {
-	if u.variant != _myUnionVariant_b {
+	if u._variant != _myUnionVariant_b {
 		panic("called Unwrap_b on wrong variant")
 	}
-	return u.inner.b
+	return u._inner.b
 }
 
 func (u *MyUnionUnion) Get_b() (*packages.Package, bool) {
-	if u.variant == _myUnionVariant_b {
-		return u.inner.b, true
+	if u._variant == _myUnionVariant_b {
+		return u._inner.b, true
 	}
 	var zero *packages.Package
 	return zero, false
@@ -76,25 +76,25 @@ func (u *MyUnionUnion) Get_b() (*packages.Package, bool) {
 
 func NewMyUnionUnion_b(val *packages.Package) MyUnionUnion {
 	return MyUnionUnion{
-		inner:   myUnion{b: val},
-		variant: _myUnionVariant_b,
+		_inner:   myUnion{b: val},
+		_variant: _myUnionVariant_b,
 	}
 }
 
 func (u *MyUnionUnion) Is_c() bool {
-	return u.variant == _myUnionVariant_c
+	return u._variant == _myUnionVariant_c
 }
 
 func (u *MyUnionUnion) Unwrap_c() context.Context {
-	if u.variant != _myUnionVariant_c {
+	if u._variant != _myUnionVariant_c {
 		panic("called Unwrap_c on wrong variant")
 	}
-	return u.inner.c
+	return u._inner.c
 }
 
 func (u *MyUnionUnion) Get_c() (context.Context, bool) {
-	if u.variant == _myUnionVariant_c {
-		return u.inner.c, true
+	if u._variant == _myUnionVariant_c {
+		return u._inner.c, true
 	}
 	var zero context.Context
 	return zero, false
@@ -102,20 +102,20 @@ func (u *MyUnionUnion) Get_c() (context.Context, bool) {
 
 func NewMyUnionUnion_c(val context.Context) MyUnionUnion {
 	return MyUnionUnion{
-		inner:   myUnion{c: val},
-		variant: _myUnionVariant_c,
+		_inner:   myUnion{c: val},
+		_variant: _myUnionVariant_c,
 	}
 }
 
 func Match_MyUnionUnion[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(*packages.Package) _R, on_c func(context.Context) _R, on_Invalid func() _R) _R {
-	switch u.variant {
+	switch u._variant {
 	case _myUnionVariant_a:
-		return on_a(u.inner.a)
+		return on_a(u._inner.a)
 	case _myUnionVariant_b:
-		return on_b(u.inner.b)
+		return on_b(u._inner.b)
 	case _myUnionVariant_c:
-		return on_c(u.inner.c)
-	case _myUnionVariant__invalid:
+		return on_c(u._inner.c)
+	case _myUnionVariant_Invalid:
 		return on_Invalid()
 	default:
 		panic("unreachable")

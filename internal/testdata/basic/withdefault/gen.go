@@ -10,24 +10,24 @@ const (
 )
 
 type MyUnionUnion struct {
-	variant _myUnionVariant
-	inner   myUnion
+	_variant _myUnionVariant
+	_inner   myUnion
 }
 
 func (u *MyUnionUnion) Is_a() bool {
-	return u.variant == _myUnionVariant_a
+	return u._variant == _myUnionVariant_a
 }
 
 func (u *MyUnionUnion) Unwrap_a() int {
-	if u.variant != _myUnionVariant_a {
+	if u._variant != _myUnionVariant_a {
 		panic("called Unwrap_a on wrong variant")
 	}
-	return u.inner.a
+	return u._inner.a
 }
 
 func (u *MyUnionUnion) Get_a() (int, bool) {
-	if u.variant == _myUnionVariant_a {
-		return u.inner.a, true
+	if u._variant == _myUnionVariant_a {
+		return u._inner.a, true
 	}
 	var zero int
 	return zero, false
@@ -35,25 +35,25 @@ func (u *MyUnionUnion) Get_a() (int, bool) {
 
 func NewMyUnionUnion_a(val int) MyUnionUnion {
 	return MyUnionUnion{
-		inner:   myUnion{a: val},
-		variant: _myUnionVariant_a,
+		_inner:   myUnion{a: val},
+		_variant: _myUnionVariant_a,
 	}
 }
 
 func (u *MyUnionUnion) Is_b() bool {
-	return u.variant == _myUnionVariant_b
+	return u._variant == _myUnionVariant_b
 }
 
 func (u *MyUnionUnion) Unwrap_b() string {
-	if u.variant != _myUnionVariant_b {
+	if u._variant != _myUnionVariant_b {
 		panic("called Unwrap_b on wrong variant")
 	}
-	return u.inner.b
+	return u._inner.b
 }
 
 func (u *MyUnionUnion) Get_b() (string, bool) {
-	if u.variant == _myUnionVariant_b {
-		return u.inner.b, true
+	if u._variant == _myUnionVariant_b {
+		return u._inner.b, true
 	}
 	var zero string
 	return zero, false
@@ -61,17 +61,17 @@ func (u *MyUnionUnion) Get_b() (string, bool) {
 
 func NewMyUnionUnion_b(val string) MyUnionUnion {
 	return MyUnionUnion{
-		inner:   myUnion{b: val},
-		variant: _myUnionVariant_b,
+		_inner:   myUnion{b: val},
+		_variant: _myUnionVariant_b,
 	}
 }
 
 func Match_MyUnionUnion[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(string) _R) _R {
-	switch u.variant {
+	switch u._variant {
 	case _myUnionVariant_a:
-		return on_a(u.inner.a)
+		return on_a(u._inner.a)
 	case _myUnionVariant_b:
-		return on_b(u.inner.b)
+		return on_b(u._inner.b)
 	default:
 		panic("unreachable")
 	}

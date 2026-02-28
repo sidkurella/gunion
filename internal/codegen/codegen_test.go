@@ -7,6 +7,7 @@ import (
 	"github.com/sidkurella/gunion/internal/codegen"
 	"github.com/sidkurella/gunion/internal/config"
 	testdata_basic "github.com/sidkurella/gunion/internal/testdata/basic"
+	testdata_generics "github.com/sidkurella/gunion/internal/testdata/generics"
 	"github.com/sidkurella/gunion/internal/types"
 	"github.com/stretchr/testify/require"
 )
@@ -31,12 +32,28 @@ func TestCodeGenerator(t *testing.T) {
 				PublicValue: false,
 				Getters:     true,
 				Setters:     true,
-				Switch:      true,
+				Match:       true,
 				Default:     false,
 			},
 			outError: nil,
 			inNamed:  testdata_basic.Representation,
 			outFile:  "../testdata/basic/gen.go",
+		},
+		{
+			name: "generics, all defaults",
+			inConfig: config.OutputConfig{
+				OutType:     "MyUnionUnion",
+				OutPkg:      "generics",
+				OutFile:     tmpDir + "/generics_gunion.go",
+				PublicValue: false,
+				Getters:     true,
+				Setters:     true,
+				Match:       true,
+				Default:     false,
+			},
+			outError: nil,
+			inNamed:  testdata_generics.Representation,
+			outFile:  "../testdata/generics/gen.go",
 		},
 	}
 	for _, tc := range cases {

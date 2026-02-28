@@ -7,7 +7,7 @@ type OutputConfig struct {
 	PublicValue bool
 	Getters     bool
 	Setters     bool
-	Switch      bool
+	Match       bool
 	Default     bool
 }
 

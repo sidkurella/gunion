@@ -46,9 +46,6 @@ func (l *Loader) Load() (types.Named, error) {
 		return types.Named{}, fmt.Errorf("type %s must be a named type, but it was not", l.config.Type)
 	}
 
-	// TODO: Change to debug log.
-	fmt.Printf("%s : %s : %s\n", pkg.Module.Path, pkg.Name, obj.Name())
-
 	return parseNamedWithDepth(namedType, true)
 }
 

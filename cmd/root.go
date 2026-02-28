@@ -66,10 +66,6 @@ The first field of the union should be your default type.
 			return err
 		}
 
-		// TODO: Change to structured logs.
-		fmt.Printf("Input configuration: %#v\n", inCfg)
-		fmt.Printf("Output configuration: %#v\n", outCfg)
-
 		ldr := LoaderFactory(inCfg)
 		t, err := ldr.Load()
 		if err != nil {
@@ -152,9 +148,9 @@ func parseFlags(flags *pflag.FlagSet) (config.InputConfig, config.OutputConfig, 
 		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-setters flag: %w", err)
 	}
 
-	noSwitch, err := flags.GetBool("no-switch")
+	noMatch, err := flags.GetBool("no-match")
 	if err != nil {
-		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-switch flag: %w", err)
+		return config.InputConfig{}, config.OutputConfig{}, fmt.Errorf("failed to parse no-match flag: %w", err)
 	}
 
 	noDefault, err := flags.GetBool("no-default")
@@ -178,7 +174,7 @@ func parseFlags(flags *pflag.FlagSet) (config.InputConfig, config.OutputConfig, 
 			PublicValue: publicValue,
 			Getters:     !noGetters,
 			Setters:     !noSetters,
-			Switch:      !noSwitch,
+			Match:       !noMatch,
 			Default:     !noDefault,
 		}, nil
 }
@@ -213,7 +209,7 @@ func setupFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("public-value", false, "Directly export union value fields.")
 	cmd.Flags().Bool("no-getters", false, "Omit getters for union members.")
 	cmd.Flags().Bool("no-setters", false, "Omit setters for union members.")
-	cmd.Flags().Bool("no-switch", false, "Omit switch function for union members.")
+	cmd.Flags().Bool("no-match", false, "Omit match function for union members.")
 	cmd.Flags().Bool(
 		"no-default", false, "Don't assume first field is the default. Instead, default value will be invalid.",
 	)

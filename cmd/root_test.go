@@ -150,7 +150,7 @@ func TestParseFlags(t *testing.T) {
 			"--public-value",
 			"--no-getters",
 			"--no-setters",
-			"--no-switch",
+			"--no-match",
 			"--no-default",
 		})
 		require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestParseFlags(t *testing.T) {
 			PublicValue: true,
 			Getters:     false,
 			Setters:     false,
-			Switch:      false,
+			Match:       false,
 			Default:     false,
 		}, outCfg)
 	})
@@ -191,7 +191,7 @@ func TestParseFlags(t *testing.T) {
 		assert.False(t, outCfg.PublicValue)
 		assert.True(t, outCfg.Getters)
 		assert.True(t, outCfg.Setters)
-		assert.True(t, outCfg.Switch)
+		assert.True(t, outCfg.Match)
 		assert.True(t, outCfg.Default)
 	})
 

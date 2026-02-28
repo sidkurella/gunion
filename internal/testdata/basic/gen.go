@@ -75,7 +75,7 @@ func NewMyUnionUnion_b(val string) MyUnionUnion {
 	}
 }
 
-func Match[T any](u *MyUnionUnion, on_a func(int) T, on_b func(string) T, on_Invalid func() T) T {
+func Match[_R any](u *MyUnionUnion, on_a func(int) _R, on_b func(string) _R, on_Invalid func() _R) _R {
 	switch u.variant {
 	case _myUnionVariant_a:
 		return on_a(u.inner.a)

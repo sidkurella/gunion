@@ -36,6 +36,10 @@ func (l *Loader) Load() (types.Named, error) {
 
 	pkg := pkgs[0]
 
+	if len(pkg.Errors) > 0 {
+		return types.Named{}, fmt.Errorf("package %s had errors: %v", pkg.PkgPath, pkg.Errors)
+	}
+
 	obj := pkg.Types.Scope().Lookup(l.config.Type)
 	if obj == nil {
 		return types.Named{}, fmt.Errorf("could not find type %s in package", l.config.Type)

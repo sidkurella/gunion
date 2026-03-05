@@ -194,8 +194,8 @@ var Representation = types.Named{
 					TypeArgs:   []types.Type{types.Basic{Name: "int"}},
 				}},
 			}}},
-			{Var: types.Var{Name: "oo", Type: types.Named{Name: "Map", Package: "sync"}}},
-			{Var: types.Var{Name: "pp", Type: types.Named{Name: "Pool", Package: "sync"}}},
+			{Var: types.Var{Name: "oo", Type: types.Named{Name: "Time", Package: "time"}}},
+			{Var: types.Var{Name: "pp", Type: types.Named{Name: "Duration", Package: "time"}}},
 		},
 	},
 }

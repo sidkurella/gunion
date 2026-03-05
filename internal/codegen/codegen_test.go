@@ -13,6 +13,7 @@ import (
 	testdata_externalimport "github.com/sidkurella/gunion/internal/testdata/externalimport"
 	testdata_generics "github.com/sidkurella/gunion/internal/testdata/generics"
 	testdata_imported "github.com/sidkurella/gunion/internal/testdata/imported"
+	testdata_torture "github.com/sidkurella/gunion/internal/testdata/torture"
 	"github.com/sidkurella/gunion/internal/types"
 	"github.com/stretchr/testify/require"
 )
@@ -147,6 +148,21 @@ func TestCodeGenerator(t *testing.T) {
 			outError: nil,
 			inNamed:  testdata_collision.Representation,
 			outFile:  "../testdata/collision/gen.go",
+		},
+		{
+			name: "torture, all defaults",
+			inConfig: config.OutputConfig{
+				OutType: "MyUnionUnion",
+				OutPkg:  "torture",
+				OutFile: tmpDir + "/torture_gunion.go",
+				Getters: true,
+				Setters: true,
+				Match:   true,
+				Default: false,
+			},
+			outError: nil,
+			inNamed:  testdata_torture.Representation,
+			outFile:  "../testdata/torture/gen.go",
 		},
 	}
 	for _, tc := range cases {

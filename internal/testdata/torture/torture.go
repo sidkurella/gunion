@@ -3,7 +3,7 @@ package torture
 import (
 	"context"
 	"io"
-	"sync"
+	"time"
 )
 
 // myUnion is a torture test with many nested and edge-case types.
@@ -107,8 +107,8 @@ type myUnion struct {
 	ll Generic[*float64]     // generic with pointer type arg
 	mm TwoParam[int, string] // generic with two type args
 	nn Generic[Generic[int]] // nested generic instantiation
-	oo sync.Map              // external non-generic (for comparison)
-	pp sync.Pool             // another external non-generic
+	oo time.Time             // external non-generic (for comparison)
+	pp time.Duration         // external named basic type (int64 underlying)
 }
 
 // Generic is a generic type for testing instantiation.

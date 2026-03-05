@@ -623,7 +623,7 @@ func signatureToCode(sig types.Signature) (*jen.Statement, error) {
 	}
 
 	var err error
-	stmt := jen.ParamsFunc(func(g *jen.Group) {
+	stmt := jen.Func().ParamsFunc(func(g *jen.Group) {
 		for i, param := range sig.Params {
 			// Handle variadic: last param with Variadic flag
 			if sig.Variadic && i == len(sig.Params)-1 {

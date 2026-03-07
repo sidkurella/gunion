@@ -51,41 +51,47 @@ var GeneratorFactory func(config.OutputConfig) Generator = func(cfg config.Outpu
 	return codegen.NewCodeGenerator(cfg)
 }
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "gunion",
-	Short: "Generates tagged unions based on a struct definition",
-	Long: `Generates a tagged union based on a struct definition.
+// newRootCmd creates a fresh root command with all flags configured.
+// This is used by Execute() for production and by tests for flag isolation.
+func newRootCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "gunion",
+		Short: "Generates tagged unions based on a struct definition",
+		Long: `Generates a tagged union based on a struct definition.
 
 The resultant union provides a variant field indicating which of the fields is valid.
 The first field of the union should be your default type.
 `,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	RunE: func(cmd *cobra.Command, args []string) error {
-		flags := cmd.Flags()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			flags := cmd.Flags()
 
-		inCfg, outCfg, err := parseFlags(flags)
-		if err != nil {
-			return err
-		}
-		outCfg.Command = strings.Join(os.Args, " ")
+			inCfg, outCfg, err := parseFlags(flags)
+			if err != nil {
+				return err
+			}
+			outCfg.Command = strings.Join(os.Args, " ")
 
-		ldr := LoaderFactory(inCfg)
-		t, err := ldr.Load()
-		if err != nil {
-			return fmt.Errorf("failed to load type: %w", err)
-		}
+			ldr := LoaderFactory(inCfg)
+			t, err := ldr.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load type: %w", err)
+			}
 
-		gen := GeneratorFactory(outCfg)
-		err = gen.Generate(t)
-		if err != nil {
-			return fmt.Errorf("failed to generate code: %w", err)
-		}
+			gen := GeneratorFactory(outCfg)
+			err = gen.Generate(t)
+			if err != nil {
+				return fmt.Errorf("failed to generate code: %w", err)
+			}
 
-		return nil
-	},
+			return nil
+		},
+	}
+	setupFlags(cmd)
+	return cmd
 }
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = newRootCmd()
 
 func parseFlags(flags *pflag.FlagSet) (config.InputConfig, config.OutputConfig, error) {
 	inType, err := flags.GetString("type")
@@ -185,10 +191,6 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-func init() {
-	setupFlags(rootCmd)
 }
 
 // setupFlags configures all flags on the given command.

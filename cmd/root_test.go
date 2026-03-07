@@ -282,11 +282,13 @@ func TestRunE(t *testing.T) {
 	origGeneratorFactory := GeneratorFactory
 	origGOFILE := os.Getenv("GOFILE")
 	origGOPACKAGE := os.Getenv("GOPACKAGE")
+	origArgs := os.Args
 	t.Cleanup(func() {
 		LoaderFactory = origLoaderFactory
 		GeneratorFactory = origGeneratorFactory
 		os.Setenv("GOFILE", origGOFILE)
 		os.Setenv("GOPACKAGE", origGOPACKAGE)
+		os.Args = origArgs
 	})
 
 	fakeNamed := types.Named{
@@ -302,6 +304,7 @@ func TestRunE(t *testing.T) {
 	t.Run("calls loader then generator with loader output", func(t *testing.T) {
 		os.Setenv("GOFILE", "test.go")
 		os.Setenv("GOPACKAGE", "testpkg")
+		os.Args = []string{"gunion", "--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"}
 
 		mockLdr := &mockLoader{result: fakeNamed}
 		mockGen := &mockGenerator{}
@@ -317,8 +320,9 @@ func TestRunE(t *testing.T) {
 			return mockGen
 		}
 
-		rootCmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
-		err := rootCmd.Execute()
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
+		err := cmd.Execute()
 		require.NoError(t, err)
 
 		// Loader received the right input config.
@@ -331,6 +335,7 @@ func TestRunE(t *testing.T) {
 		assert.True(t, capturedOutCfg.Getters)
 		assert.True(t, capturedOutCfg.Setters)
 		assert.True(t, capturedOutCfg.Match)
+		assert.Equal(t, "gunion --type myUnion --src test.go --out-pkg testpkg", capturedOutCfg.Command)
 
 		// Generator was called with the loader's output.
 		assert.True(t, mockGen.called)
@@ -347,8 +352,9 @@ func TestRunE(t *testing.T) {
 		LoaderFactory = func(cfg config.InputConfig) Loader { return mockLdr }
 		GeneratorFactory = func(cfg config.OutputConfig) Generator { return mockGen }
 
-		rootCmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
-		err := rootCmd.Execute()
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
+		err := cmd.Execute()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to load type")
 		assert.Contains(t, err.Error(), "load failed")
@@ -367,8 +373,9 @@ func TestRunE(t *testing.T) {
 		LoaderFactory = func(cfg config.InputConfig) Loader { return mockLdr }
 		GeneratorFactory = func(cfg config.OutputConfig) Generator { return mockGen }
 
-		rootCmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
-		err := rootCmd.Execute()
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{"--type", "myUnion", "--src", "test.go", "--out-pkg", "testpkg"})
+		err := cmd.Execute()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to generate code")
 		assert.Contains(t, err.Error(), "generate failed")

@@ -158,3 +158,129 @@ func TestIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestIntegrationErrors(t *testing.T) {
+	// Save and restore global state.
+	origLoaderFactory := LoaderFactory
+	origGeneratorFactory := GeneratorFactory
+	origGOFILE := os.Getenv("GOFILE")
+	origGOPACKAGE := os.Getenv("GOPACKAGE")
+	origArgs := os.Args
+	t.Cleanup(func() {
+		LoaderFactory = origLoaderFactory
+		GeneratorFactory = origGeneratorFactory
+		os.Setenv("GOFILE", origGOFILE)
+		os.Setenv("GOPACKAGE", origGOPACKAGE)
+		os.Args = origArgs
+	})
+
+	os.Setenv("GOFILE", "")
+	os.Setenv("GOPACKAGE", "")
+
+	tmpDir := t.TempDir()
+
+	t.Run("nonexistent source file", func(t *testing.T) {
+		outFile := filepath.Join(tmpDir, "nonexistent_gunion.go")
+		srcAbs, err := filepath.Abs(filepath.Join("..", "internal", "testdata", "nonexistent", "nonexistent.go"))
+		require.NoError(t, err)
+
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--type", "myUnion",
+			"--src", srcAbs,
+			"--out-type", "MyUnionUnion",
+			"--out-pkg", "nonexistent",
+			"--out-file", outFile,
+		})
+		err = cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to load type")
+	})
+
+	t.Run("nonexistent type in valid source", func(t *testing.T) {
+		outFile := filepath.Join(tmpDir, "badtype_gunion.go")
+		srcAbs, err := filepath.Abs(filepath.Join("..", "internal", "testdata", "basic", "basic.go"))
+		require.NoError(t, err)
+
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--type", "doesNotExist",
+			"--src", srcAbs,
+			"--out-type", "MyUnionUnion",
+			"--out-pkg", "basic",
+			"--out-file", outFile,
+		})
+		err = cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "could not find type doesNotExist")
+	})
+
+	t.Run("non-struct type", func(t *testing.T) {
+		outFile := filepath.Join(tmpDir, "nonstruct_gunion.go")
+		srcAbs, err := filepath.Abs(filepath.Join("..", "internal", "testdata", "nonstruct", "nonstruct.go"))
+		require.NoError(t, err)
+
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--type", "myUnion",
+			"--src", srcAbs,
+			"--out-type", "MyUnionUnion",
+			"--out-pkg", "nonstruct",
+			"--out-file", outFile,
+		})
+		err = cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "expected a struct type")
+	})
+
+	t.Run("source file with compile errors", func(t *testing.T) {
+		outFile := filepath.Join(tmpDir, "compileerror_gunion.go")
+		srcAbs, err := filepath.Abs(filepath.Join("..", "internal", "testdata", "compileerror", "compileerror.go"))
+		require.NoError(t, err)
+
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--type", "myUnion",
+			"--src", srcAbs,
+			"--out-type", "MyUnionUnion",
+			"--out-pkg", "compileerror",
+			"--out-file", outFile,
+		})
+		err = cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "had errors")
+	})
+
+	t.Run("missing required type flag", func(t *testing.T) {
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--src", "test.go",
+			"--out-pkg", "testpkg",
+		})
+		err := cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "required flag")
+	})
+
+	t.Run("missing src and GOFILE", func(t *testing.T) {
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--type", "myUnion",
+			"--out-pkg", "testpkg",
+		})
+		err := cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "one of src or GOFILE must be set")
+	})
+
+	t.Run("missing out-pkg and GOPACKAGE", func(t *testing.T) {
+		cmd := newRootCmd()
+		cmd.SetArgs([]string{
+			"--type", "myUnion",
+			"--src", "test.go",
+		})
+		err := cmd.Execute()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "one of out-pkg or GOPACKAGE must be set")
+	})
+}

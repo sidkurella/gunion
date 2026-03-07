@@ -192,6 +192,69 @@ func TestCodeGenerator(t *testing.T) {
 	}
 }
 
+func TestCodeGeneratorErrors(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	t.Run("non-struct type", func(t *testing.T) {
+		cfg := config.OutputConfig{
+			OutType: "MyUnionUnion",
+			OutPkg:  "test",
+			OutFile: tmpDir + "/nonstruct_gunion.go",
+			Getters: true,
+			Setters: true,
+			Match:   true,
+		}
+		cg := codegen.NewCodeGenerator(cfg)
+		// Pass a Named type whose underlying type is Basic (int), not Struct.
+		err := cg.Generate(types.Named{
+			Name:    "myUnion",
+			Package: "example.com/pkg",
+			Type:    types.Basic{Name: "int"},
+		})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "expected a struct type")
+	})
+
+	t.Run("nil underlying type", func(t *testing.T) {
+		cfg := config.OutputConfig{
+			OutType: "MyUnionUnion",
+			OutPkg:  "test",
+			OutFile: tmpDir + "/nil_gunion.go",
+			Getters: true,
+			Setters: true,
+			Match:   true,
+		}
+		cg := codegen.NewCodeGenerator(cfg)
+		// Pass a Named type with no underlying type (nil).
+		err := cg.Generate(types.Named{
+			Name:    "myUnion",
+			Package: "example.com/pkg",
+		})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "expected a struct type")
+	})
+
+	t.Run("empty struct (no fields)", func(t *testing.T) {
+		cfg := config.OutputConfig{
+			OutType: "MyUnionUnion",
+			OutPkg:  "test",
+			OutFile: tmpDir + "/empty_gunion.go",
+			Getters: true,
+			Setters: true,
+			Match:   true,
+			Default: false,
+		}
+		cg := codegen.NewCodeGenerator(cfg)
+		// An empty struct is technically valid — generates a union with only the Invalid variant.
+		err := cg.Generate(types.Named{
+			Name:    "myUnion",
+			Package: "example.com/pkg",
+			Type:    types.Struct{Fields: []types.Field{}},
+		})
+		require.NoError(t, err)
+	})
+}
+
 func TestCodeGeneratorCommand(t *testing.T) {
 	tmpDir := t.TempDir()
 

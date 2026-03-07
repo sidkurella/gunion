@@ -85,3 +85,48 @@ func TestLoader(t *testing.T) {
 		})
 	}
 }
+
+func TestLoaderErrors(t *testing.T) {
+	t.Run("nonexistent source file", func(t *testing.T) {
+		l := loader.NewLoader(config.InputConfig{
+			Source: "../testdata/nonexistent/nonexistent.go",
+			Type:   "myUnion",
+		})
+		_, err := l.Load()
+		require.Error(t, err)
+		// packages.Load returns 0 packages for a nonexistent file.
+		require.Contains(t, err.Error(), "expected to load 1 package but got 0")
+	})
+
+	t.Run("nonexistent type in valid source", func(t *testing.T) {
+		l := loader.NewLoader(config.InputConfig{
+			Source: "../testdata/basic/basic.go",
+			Type:   "doesNotExist",
+		})
+		_, err := l.Load()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "could not find type doesNotExist in package")
+	})
+
+	t.Run("non-struct type", func(t *testing.T) {
+		l := loader.NewLoader(config.InputConfig{
+			Source: "../testdata/nonstruct/nonstruct.go",
+			Type:   "myUnion",
+		})
+		// The loader should succeed — it loads any named type.
+		// The codegen layer is responsible for rejecting non-struct types.
+		named, err := l.Load()
+		require.NoError(t, err)
+		require.Equal(t, "myUnion", named.Name)
+	})
+
+	t.Run("source file with compile errors", func(t *testing.T) {
+		l := loader.NewLoader(config.InputConfig{
+			Source: "../testdata/compileerror/compileerror.go",
+			Type:   "myUnion",
+		})
+		_, err := l.Load()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "had errors")
+	})
+}

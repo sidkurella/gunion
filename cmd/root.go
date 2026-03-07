@@ -196,7 +196,7 @@ func Execute() {
 // setupFlags configures all flags on the given command.
 func setupFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("type", "t", "", "Type to generate the union from.")
-	cmd.MarkFlagRequired("type")
+	_ = cmd.MarkFlagRequired("type")
 	cmd.Flags().String(
 		"out-type", "",
 		"Output type name. If not specified, capitalizes the input type name and suffixes with Union.",
